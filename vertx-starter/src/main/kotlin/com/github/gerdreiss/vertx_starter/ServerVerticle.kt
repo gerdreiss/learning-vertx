@@ -16,9 +16,7 @@ class MainVerticle : AbstractVerticle() {
   private fun randomFile(): String {
     val files = Files
       .list(Path.of(System.getProperty("user.home")))
-      .filter {
-        it.isRegularFile(LinkOption.NOFOLLOW_LINKS)
-      }
+      .filter { it.isRegularFile(LinkOption.NOFOLLOW_LINKS) }
       .toList()
     return files[Random().nextInt(files.size)].absolutePathString()
   }
@@ -27,7 +25,8 @@ class MainVerticle : AbstractVerticle() {
     vertx
       .createHttpServer()
       .requestHandler { req ->
-        vertx.fileSystem()
+        vertx
+          .fileSystem()
           .readFile(randomFile())
           .onComplete { asyncResult ->
             if (asyncResult.succeeded()) {
@@ -46,7 +45,7 @@ class MainVerticle : AbstractVerticle() {
           startPromise.complete()
           println("HTTP server started on port 8888")
         } else {
-          startPromise.fail(http.cause());
+          startPromise.fail(http.cause())
         }
       }
   }
