@@ -30,15 +30,15 @@ class WorkerExample : AbstractVerticle() {
   private fun executeBlocking() {
     vertx.executeBlocking<Unit>(
       { event ->
-        LOG.debug("Executing blocking code")
+        LOG.debug("Executing blocking code.")
         Thread.sleep(5000)
         event.complete()
       },
       { result ->
-        if (result.succeeded()) {
-          LOG.debug("Blocking call done")
-        } else {
-          LOG.debug("Blocking call failed due to: ${result.cause()}")
+        result.map {
+          LOG.debug("Blocking call done.")
+        }.otherwise { error ->
+          LOG.debug("Blocking call failed due to: $error")
         }
       }
     )
