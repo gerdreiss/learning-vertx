@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx.starter.eventloop
+package com.github.gerdreiss.vertx.starter.eventloops
 
 import io.vertx.core.*
 import org.slf4j.Logger
@@ -28,11 +28,11 @@ fun main() {
       .setBlockedThreadCheckInterval(1)
       .setBlockedThreadCheckIntervalUnit(TimeUnit.SECONDS)
       // this setting does not make any sense
-      // since we want to start 4 instances of the verticle (see below)
-      .setEventLoopPoolSize(2)
-  )
-  vertx.deployVerticle(
-    EventLoopExample::class.qualifiedName,
-    DeploymentOptions().setInstances(4)
+      // since we want to start 4 instances of the verticle (see here)
+      .setEventLoopPoolSize(2)                                    //
+  )                                                               //
+  vertx.deployVerticle(                                           //
+    EventLoopExample::class.qualifiedName,                        //
+    DeploymentOptions().setInstances(4) // <<=====================//
   )
 }
