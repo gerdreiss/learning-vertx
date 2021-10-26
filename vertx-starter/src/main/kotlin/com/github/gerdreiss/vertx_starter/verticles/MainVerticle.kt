@@ -4,12 +4,14 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 class MainVerticle : AbstractVerticle() {
 
-  val LOG = LoggerFactory.getLogger(javaClass)
+  companion object {
+    val LOG: Logger = LoggerFactory.getLogger(VerticleN::class.java)
+  }
 
   override fun start() {
     LOG.debug("Start ${javaClass.name}")
@@ -21,7 +23,7 @@ class MainVerticle : AbstractVerticle() {
         .setInstances(4)
         .setConfig(
           JsonObject()
-            .put("id", UUID.randomUUID().toString())
+            .put("id", java.util.UUID.randomUUID().toString())
             .put("name", VerticleN::class.simpleName)
         )
     )
