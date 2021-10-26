@@ -46,6 +46,6 @@ class WorkerExample : AbstractVerticle() {
 }
 
 fun main() {
-  val vertx = Vertx.vertx();
+  val vertx = Vertx.vertx()
   vertx.deployVerticle(WorkerExample())
 }
