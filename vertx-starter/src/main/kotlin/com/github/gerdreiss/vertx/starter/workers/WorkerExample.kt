@@ -34,8 +34,8 @@ class WorkerExample : AbstractVerticle() {
         Thread.sleep(5000)
         event.complete()
       },
-      { result ->
-        result.map {
+      {
+        it.map {
           LOG.debug("Blocking call done.")
         }.otherwise { error ->
           LOG.debug("Blocking call failed due to: $error")
