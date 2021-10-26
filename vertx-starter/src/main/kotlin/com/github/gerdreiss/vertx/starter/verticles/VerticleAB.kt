@@ -1,11 +1,11 @@
-package com.github.gerdreiss.vertx_starter.verticles
+package com.github.gerdreiss.vertx.starter.verticles
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class VerticleAA : AbstractVerticle() {
+class VerticleAB : AbstractVerticle() {
 
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(VerticleN::class.java)

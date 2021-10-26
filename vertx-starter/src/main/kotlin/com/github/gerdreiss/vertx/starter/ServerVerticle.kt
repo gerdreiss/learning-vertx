@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx_starter
+package com.github.gerdreiss.vertx.starter
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise

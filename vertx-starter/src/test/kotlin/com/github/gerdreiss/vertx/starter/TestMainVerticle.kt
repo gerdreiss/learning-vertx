@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx_starter
+package com.github.gerdreiss.vertx.starter
 
 import io.vertx.core.Vertx
 import io.vertx.junit5.VertxExtension

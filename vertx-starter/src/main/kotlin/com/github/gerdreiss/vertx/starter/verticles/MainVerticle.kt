@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx_starter.verticles
+package com.github.gerdreiss.vertx.starter.verticles
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.DeploymentOptions
