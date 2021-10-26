@@ -2,4 +2,6 @@
 
 with
 
-* [Learn Vert.x Udemy Course](http://bit.ly/3ocQjOv)
+* [Udemy](https://www.udemy.com)
+  * [Learn Vert.x](http://bit.ly/3ocQjOv)
+
