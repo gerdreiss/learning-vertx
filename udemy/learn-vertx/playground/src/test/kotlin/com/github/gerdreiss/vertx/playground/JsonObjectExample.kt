@@ -24,7 +24,11 @@ class JsonObjectExample {
 
   @Test
   fun jsonObjectCanBeCreatedFromMap() {
-    val jsonMap = mapOf("id" to 1, "name" to "Alice", "loves_vertx" to true)
+    val jsonMap = mapOf(
+      "id" to 1,
+      "name" to "Alice",
+      "loves_vertx" to true
+    )
     val asJsonObject = JsonObject(jsonMap)
     assertEquals(jsonMap, asJsonObject.map)
     assertEquals(1, asJsonObject.getInteger("id"))
