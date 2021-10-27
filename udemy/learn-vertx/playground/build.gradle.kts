@@ -18,9 +18,10 @@ repositories {
 
 val kotlinVersion = "1.5.31"
 val vertxVersion = "4.1.5"
-val junitJupiterVersion = "5.8.1"
+val jacksonDatabind = "2.11.4"
 val log4jVersion = "2.14.1"
 val slf4jVersion = "1.7.32"
+val junitJupiterVersion = "5.8.1"
 
 val mainVerticleName = "com.github.gerdreiss.vertx_starter.MainVerticle"
 val launcherClassName = "io.vertx.core.Launcher"
@@ -34,12 +35,18 @@ application {
 
 dependencies {
   implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
+
+  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabind")
+
   implementation("io.vertx:vertx-lang-kotlin:$vertxVersion")
   implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+
   implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
   implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
   implementation("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
+
   implementation("org.slf4j:slf4j-api:$slf4jVersion")
+
   testImplementation("io.vertx:vertx-junit5:$vertxVersion")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }
