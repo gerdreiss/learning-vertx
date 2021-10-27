@@ -1,5 +1,6 @@
 package com.github.gerdreiss.vertx.playground
 
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.core.json.get
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -32,6 +33,19 @@ class JsonObjectExample {
     assertEquals(true, asJsonObject.getBoolean("loves_vertx"))
     assertEquals(true, asJsonObject["loves_vertx"])
     assertEquals("true", asJsonObject.getString("loves_vertx"))
+  }
+
+
+  @Test
+  fun jsonArrayCanBeMapped() {
+    val arr = JsonArray(
+      mutableListOf(
+        JsonObject(mapOf("id" to 1)),
+        JsonObject(mapOf("id" to 2)),
+        JsonObject(mapOf("id" to 3))
+      )
+    )
+    assertEquals("""[{"id":1},{"id":2},{"id":3}]""", arr.encode())
   }
 
 }
