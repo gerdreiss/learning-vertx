@@ -42,7 +42,7 @@ object Routes {
         .end(asset.toJson().toBuffer())
     }
 
-  fun quotes(parent: Router) =
+  fun quotes(parent: Router): Route =
     parent.get("/assets/:asset/quotes").handler { context ->
       val asset = context.pathParam("asset")
       LOG.debug("asset param: $asset")
