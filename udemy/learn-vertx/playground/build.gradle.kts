@@ -23,7 +23,7 @@ val log4jVersion = "2.14.1"
 val slf4jVersion = "1.7.32"
 val junitJupiterVersion = "5.8.1"
 
-val mainVerticleName = "com.github.gerdreiss.vertx_starter.MainVerticle"
+val mainVerticleName = "com.github.gerdreiss.vertx.playground.ServerVerticle"
 val launcherClassName = "io.vertx.core.Launcher"
 
 val watchForChange = "src/**/*"

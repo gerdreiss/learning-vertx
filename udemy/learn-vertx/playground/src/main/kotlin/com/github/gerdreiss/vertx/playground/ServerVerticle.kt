@@ -11,7 +11,7 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.isRegularFile
 import kotlin.streams.toList
 
-class MainVerticle : AbstractVerticle() {
+class ServerVerticle : AbstractVerticle() {
 
   private fun randomFile(): String {
     val files = Files
@@ -53,5 +53,5 @@ class MainVerticle : AbstractVerticle() {
 
 fun main() {
   val vertx = Vertx.vertx()
-  vertx.deployVerticle(MainVerticle())
+  vertx.deployVerticle(ServerVerticle())
 }

@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx.playground
+package com.github.gerdreiss.vertx.playground.json
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
