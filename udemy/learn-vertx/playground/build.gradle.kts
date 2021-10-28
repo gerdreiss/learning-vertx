@@ -7,6 +7,7 @@ plugins {
   application
   id("com.github.johnrengelman.shadow") version "7.0.0"
   id("io.spring.dependency-management") version "1.0.1.RELEASE"
+  id("com.google.cloud.tools.jib") version "3.1.4"
 }
 
 group = "com.github.gerdreiss"
@@ -77,4 +78,19 @@ tasks.withType<JavaExec> {
     "--launcher-class=$launcherClassName",
     "--on-redeploy=$doOnChange"
   )
+}
+
+// fails with 401
+jib {
+  from {
+    image = "eclipse-temurin:11"
+  }
+  to {
+    image = "example/jib/vertx-playground"
+  }
+  container {
+    mainClass = "io.vertx.core.Launcher"
+    args = listOf("run", mainVerticleName)
+    ports = listOf("8888")
+  }
 }
