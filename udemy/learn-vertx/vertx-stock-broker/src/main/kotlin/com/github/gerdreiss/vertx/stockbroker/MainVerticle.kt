@@ -21,6 +21,8 @@ class MainVerticle : AbstractVerticle() {
     router.route().failureHandler(::failureHandler)
     Routes.root(router)
     Routes.assets(router)
+    Routes.asset(router)
+    Routes.quotes(router)
 
     vertx
       .createHttpServer()
