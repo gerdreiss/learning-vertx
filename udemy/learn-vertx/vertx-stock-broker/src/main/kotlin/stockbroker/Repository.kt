@@ -1,19 +1,22 @@
 package stockbroker
 
-import stockbroker.Model.Asset
-import stockbroker.Model.Quote
 import arrow.core.Option
 import arrow.core.nonEmptyListOf
 import arrow.core.toOption
+
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
-sealed interface PersistentStore {
+sealed interface Repository {
   fun getAllAssets(): List<Asset>
   fun getAssetBySymbol(symbol: String): Option<Asset>
   fun getQuoteForAsset(asset: Asset): Option<Quote>
+  fun getWatchlist(accountId: UUID): Option<Watchlist>
+  fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist>
+  fun deleteWatchlist(accountId: UUID): Option<Watchlist>
 }
 
-object MemStore : PersistentStore {
+object MemStore : Repository {
   private val assets = nonEmptyListOf(
     Asset("AAPL"),
     Asset("AMZN"),
@@ -32,6 +35,7 @@ object MemStore : PersistentStore {
       ThreadLocalRandom.current().nextDouble(1.0, 100.0).toBigDecimal(),
     )
   }
+  private val watchlists = mutableMapOf<UUID, Watchlist>()
 
   override fun getAllAssets(): List<Asset> =
     assets
@@ -41,5 +45,14 @@ object MemStore : PersistentStore {
 
   override fun getQuoteForAsset(asset: Asset): Option<Quote> =
     quotes.find { it.asset == asset }.toOption()
+
+  override fun getWatchlist(accountId: UUID): Option<Watchlist> =
+    watchlists[accountId].toOption()
+
+  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist> =
+    watchlists.put(accountId, watchlist).toOption()
+
+  override fun deleteWatchlist(accountId: UUID): Option<Watchlist> =
+    watchlists.remove(accountId).toOption()
 
 }

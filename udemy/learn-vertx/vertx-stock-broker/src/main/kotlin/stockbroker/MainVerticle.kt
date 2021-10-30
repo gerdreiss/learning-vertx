@@ -23,6 +23,9 @@ class MainVerticle : AbstractVerticle() {
     Routes.assets(router)
     Routes.asset(router)
     Routes.quotes(router)
+    Routes.getWatchlist(router)
+    Routes.putWatchlist(router)
+    Routes.deleteWatchlist(router)
 
     vertx
       .createHttpServer()

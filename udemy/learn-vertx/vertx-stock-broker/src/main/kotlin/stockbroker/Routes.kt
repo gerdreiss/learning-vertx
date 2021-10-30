@@ -1,23 +1,27 @@
 package stockbroker
 
 
+import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.getOrHandle
 import io.vertx.core.Future
 import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 object Routes {
 
-  private val LOG: Logger = LoggerFactory.getLogger(Routes::class.java)
+  private val logger: Logger = LoggerFactory.getLogger(Routes::class.java)
 
   private val persistentStore = MemStore
   private val assetService = AssetService(persistentStore)
   private val quoteService = QuoteService(persistentStore)
+  private val watchlistService = WatchlistService(persistentStore)
 
   fun root(parent: Router): Route =
     parent.get("/").handler { context ->
@@ -29,7 +33,7 @@ object Routes {
   fun assets(parent: Router): Route =
     parent.get("/assets").handler { context ->
       val assets = assetService.getAll()
-      LOG.info("Path ${context.normalizedPath()} responds with\n$assets")
+      logger.info("Path ${context.normalizedPath()} responds with\n$assets")
       val response = assets.fold(JsonArray()) { jsonArray, asset ->
         jsonArray.add(asset.toJson())
       }
@@ -44,7 +48,7 @@ object Routes {
         assetService.getBySymbol(context.pathParam("symbol"))
           .map { asset ->
             val response = asset.toJson()
-            LOG.debug("Path ${context.normalizedPath()} responds with\n$response")
+            logger.debug("Path ${context.normalizedPath()} responds with\n$response")
             context.response()
               .setStatusCode(200)
               .putHeader("Content-Type", "application/json")
@@ -57,12 +61,12 @@ object Routes {
     parent.get("/assets/:symbol/quotes")
       .handler { context ->
         context.pathParam("symbol")?.let { symbol ->
-          LOG.debug("asset param: $symbol")
+          logger.debug("asset param: $symbol")
           assetService.getBySymbol(symbol)
             .flatMap(quoteService::getForAsset)
             .map { quote ->
               val response = quote.toJson()
-              LOG.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+              logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
               context.response()
                 .putHeader("Content-Type", "application/json")
                 .end(response.toBuffer())
@@ -71,12 +75,43 @@ object Routes {
         }
       }
 
+  private const val watchlistPath = "/accounts/:accountId/watchlist"
+
+  fun getWatchlist(parent: Router): Route =
+    parent.get(watchlistPath)
+      .handler { context ->
+        Either
+          .catch { UUID.fromString(context.pathParam("accountId")) }
+          .mapLeft { "Invalid account ID" }
+          .flatMap(watchlistService::getWatchlist)
+          .map { watchlist ->
+            val response = watchlist.toJson()
+            logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+            context.response()
+              .putHeader("Content-Type", "application/json")
+              .end(response.toBuffer())
+          }
+          .getOrHandle { notFound(context, it) }
+      }
+
+  fun putWatchlist(parent: Router): Route =
+    parent.put(watchlistPath)
+      .handler { context ->
+
+      }
+
+  fun deleteWatchlist(parent: Router): Route =
+    parent.delete(watchlistPath)
+      .handler { context ->
+
+      }
+
   private fun notFound(context: RoutingContext, message: String): Future<Void> {
-    LOG.error(message)
+    logger.error(message)
     return context.response()
       .setStatusCode(404)
       .setStatusMessage(message)
-      .end()
+      .end(JsonObject().put("message", message).encodePrettily())
   }
 }
 
