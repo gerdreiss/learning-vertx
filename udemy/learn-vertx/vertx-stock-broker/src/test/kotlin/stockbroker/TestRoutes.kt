@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx.stockbroker
+package stockbroker
 
 import io.vertx.core.Vertx
 import io.vertx.ext.web.client.WebClient
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import stockbroker.MainVerticle
 
 @ExtendWith(VertxExtension::class)
 class TestRoutes {

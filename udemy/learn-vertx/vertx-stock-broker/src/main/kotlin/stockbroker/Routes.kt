@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx.stockbroker
+package stockbroker
 
 
 import arrow.core.flatMap
@@ -15,8 +15,9 @@ object Routes {
 
   private val LOG: Logger = LoggerFactory.getLogger(Routes::class.java)
 
-  private val assetService = AssetService()
-  private val quoteService = QuoteService()
+  private val persistentStore = MemStore
+  private val assetService = AssetService(persistentStore)
+  private val quoteService = QuoteService(persistentStore)
 
   fun root(parent: Router): Route =
     parent.get("/").handler { context ->

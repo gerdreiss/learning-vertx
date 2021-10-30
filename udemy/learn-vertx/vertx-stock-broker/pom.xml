@@ -20,7 +20,7 @@
     <vertx.version>4.2.0</vertx.version>
     <junit-jupiter.version>5.8.1</junit-jupiter.version>
 
-    <main.verticle>com.github.gerdreiss.vertx.stockbroker.MainVerticle</main.verticle>
+    <main.verticle>stockbroker.MainVerticle</main.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
     <jackson-databind.version>2.11.4</jackson-databind.version>
     <logback-classic.version>1.2.6</logback-classic.version>

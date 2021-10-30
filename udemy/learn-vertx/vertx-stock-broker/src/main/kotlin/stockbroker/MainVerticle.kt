@@ -1,4 +1,4 @@
-package com.github.gerdreiss.vertx.stockbroker
+package stockbroker
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
