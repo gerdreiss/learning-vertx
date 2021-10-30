@@ -60,19 +60,18 @@ object Routes {
   fun quotes(parent: Router): Route =
     parent.get("/assets/:symbol/quotes")
       .handler { context ->
-        context.pathParam("symbol")?.let { symbol ->
-          logger.debug("asset param: $symbol")
-          assetService.getBySymbol(symbol)
-            .flatMap(quoteService::getForAsset)
-            .map { quote ->
-              val response = quote.toJson()
-              logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
-              context.response()
-                .putHeader("Content-Type", "application/json")
-                .end(response.toBuffer())
-            }
-            .getOrHandle { notFound(context, it) }
-        }
+        val symbol = context.pathParam("symbol")
+        logger.debug("asset param: $symbol")
+        assetService.getBySymbol(symbol)
+          .flatMap(quoteService::getForAsset)
+          .map { quote ->
+            val response = quote.toJson()
+            logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+            context.response()
+              .putHeader("Content-Type", "application/json")
+              .end(response.toBuffer())
+          }
+          .getOrHandle { notFound(context, it) }
       }
 
   private const val watchlistPath = "/accounts/:accountId/watchlist"
@@ -97,13 +96,13 @@ object Routes {
   fun putWatchlist(parent: Router): Route =
     parent.put(watchlistPath)
       .handler { context ->
-
+        // TODO
       }
 
   fun deleteWatchlist(parent: Router): Route =
     parent.delete(watchlistPath)
       .handler { context ->
-
+        // TODO
       }
 
   private fun notFound(context: RoutingContext, message: String): Future<Void> {
