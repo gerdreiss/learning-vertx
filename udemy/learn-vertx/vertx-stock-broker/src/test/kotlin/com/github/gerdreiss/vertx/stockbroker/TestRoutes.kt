@@ -27,7 +27,7 @@ class TestRoutes {
       .onComplete(testContext.succeeding { response ->
         val json = response.bodyAsJsonArray()
         println(json)
-        assertEquals("""[{"symbol":"AAPL"},{"symbol":"NFLX"},{"symbol":"AMZN"},{"symbol":"TSLA"}]""", json.encode())
+        assertEquals("""[{"symbol":"AAPL"},{"symbol":"AMZN"},{"symbol":"FB"},{"symbol":"GOOG"},{"symbol":"MSTF"},{"symbol":"NFLX"},{"symbol":"TSLA"}]""", json.encode())
         assertEquals(200, response.statusCode())
         testContext.completeNow()
       })

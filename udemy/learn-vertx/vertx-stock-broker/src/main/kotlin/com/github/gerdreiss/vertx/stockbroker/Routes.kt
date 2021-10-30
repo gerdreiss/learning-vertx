@@ -1,9 +1,13 @@
 package com.github.gerdreiss.vertx.stockbroker
 
 
+import arrow.core.flatMap
+import arrow.core.getOrHandle
+import io.vertx.core.Future
 import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -34,24 +38,44 @@ object Routes {
     }
 
   fun asset(parent: Router): Route =
-    parent.get("/assets/:symbol").handler { context ->
-      val asset = assetService.getBySymbol(context.pathParam("symbol"))
-      LOG.info("Path ${context.normalizedPath()} responds with\n$asset")
-      context.response()
-        .putHeader("Content-Type", "application/json")
-        .end(asset.toJson().toBuffer())
-    }
+    parent.get("/assets/:symbol")
+      .handler { context ->
+        assetService.getBySymbol(context.pathParam("symbol"))
+          .map { asset ->
+            val response = asset.toJson()
+            LOG.debug("Path ${context.normalizedPath()} responds with\n$response")
+            context.response()
+              .setStatusCode(200)
+              .putHeader("Content-Type", "application/json")
+              .end(response.toBuffer())
+          }
+          .getOrHandle { notFound(context, it) }
+      }
 
   fun quotes(parent: Router): Route =
-    parent.get("/assets/:asset/quotes").handler { context ->
-      val asset = context.pathParam("asset")
-      LOG.debug("asset param: $asset")
-      val quote = quoteService.getForAsset(asset)
-      val response = quote.toJson()
-      LOG.info("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
-      context.response()
-        .putHeader("Content-Type", "application/json")
-        .end(response.toBuffer())
-    }
+    parent.get("/assets/:symbol/quotes")
+      .handler { context ->
+        context.pathParam("symbol")?.let { symbol ->
+          LOG.debug("asset param: $symbol")
+          assetService.getBySymbol(symbol)
+            .flatMap(quoteService::getForAsset)
+            .map { quote ->
+              val response = quote.toJson()
+              LOG.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+              context.response()
+                .putHeader("Content-Type", "application/json")
+                .end(response.toBuffer())
+            }
+            .getOrHandle { notFound(context, it) }
+        }
+      }
 
+  private fun notFound(context: RoutingContext, message: String): Future<Void> {
+    LOG.error(message)
+    return context.response()
+      .setStatusCode(404)
+      .setStatusMessage(message)
+      .end()
+  }
 }
+
