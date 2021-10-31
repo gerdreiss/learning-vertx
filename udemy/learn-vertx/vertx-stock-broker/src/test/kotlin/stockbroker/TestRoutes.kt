@@ -94,34 +94,34 @@ class TestRoutes {
 
   @Test
   fun test_post_get_and_delete(vertx: Vertx, testContext: VertxTestContext) {
-    val clientOptions = WebClientOptions().setDefaultPort(8888)
+    val webClient = WebClient.create(vertx, WebClientOptions().setDefaultPort(8888))
     val url = "/accounts/${UUID.randomUUID()}/watchlist"
-    val body = Watchlist(listOf(Asset("APPL"), Asset("FP"))).toJson()
+    val watchlist = Watchlist(listOf(Asset("APPL"), Asset("FP"))).toJson()
 
-    WebClient
-      .create(vertx, clientOptions)
+    webClient
       .post(url)
-      .sendJsonObject(body)
+      .sendJsonObject(watchlist)
       .onComplete(testContext.succeeding { response ->
         assertEquals(201, response.statusCode())
-      }).compose {
-        WebClient
-          .create(vertx, clientOptions)
+      })
+      .compose {
+        webClient
           .get(url)
           .send()
           .onComplete(testContext.succeeding { response ->
             assertEquals(200, response.statusCode())
-            assertEquals(body, response.bodyAsJsonObject())
+            assertEquals(watchlist, response.bodyAsJsonObject())
           })
-      }.compose {
-        WebClient
-          .create(vertx, clientOptions)
+      }
+      .compose {
+        webClient
           .delete(url)
           .send()
           .onComplete(testContext.succeeding { response ->
             assertEquals(200, response.statusCode())
           })
-      }.onSuccess { testContext.completeNow() }
+      }
+      .onSuccess { testContext.completeNow() }
 
   }
 }
