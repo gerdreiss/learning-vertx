@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import stockbroker.MainVerticle
+import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 
 @ExtendWith(VertxExtension::class)
 class TestRoutes {
@@ -28,7 +29,10 @@ class TestRoutes {
       .onComplete(testContext.succeeding { response ->
         val json = response.bodyAsJsonArray()
         println(json)
-        assertEquals("""[{"symbol":"AAPL"},{"symbol":"AMZN"},{"symbol":"FB"},{"symbol":"GOOG"},{"symbol":"MSTF"},{"symbol":"NFLX"},{"symbol":"TSLA"}]""", json.encode())
+        assertEquals(
+          """[{"symbol":"AAPL"},{"symbol":"AMZN"},{"symbol":"FB"},{"symbol":"GOOG"},{"symbol":"MSTF"},{"symbol":"NFLX"},{"symbol":"TSLA"}]""",
+          json.encode()
+        )
         assertEquals(200, response.statusCode())
         testContext.completeNow()
       })
@@ -60,6 +64,30 @@ class TestRoutes {
         println(json)
         assertEquals("AMZN", json.getJsonObject("asset").getString("symbol"))
         assertEquals(200, response.statusCode())
+        testContext.completeNow()
+      })
+  }
+
+  @Test
+  fun test_put_invalid_accountId(vertx: Vertx, testContext: VertxTestContext) {
+    WebClient
+      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .put("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
+      .send()
+      .onComplete(testContext.succeeding { response ->
+        assertEquals(400, response.statusCode())
+        testContext.completeNow()
+      })
+  }
+
+  @Test
+  fun test_put_no_body(vertx: Vertx, testContext: VertxTestContext) {
+    WebClient
+      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .put("/accounts/${UUID.randomUUID()}/watchlist")
+      .send()
+      .onComplete(testContext.succeeding { response ->
+        assertEquals(400, response.statusCode())
         testContext.completeNow()
       })
   }

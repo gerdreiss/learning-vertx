@@ -96,19 +96,45 @@ object Routes {
   fun putWatchlist(parent: Router): Route =
     parent.put(watchlistPath)
       .handler { context ->
-        // TODO
+        Either
+          .catch { UUID.fromString(context.pathParam("accountId")) }
+          .mapLeft { "Invalid account ID" }
+          .flatMap { accountId ->
+            Either
+              .fromNullable(context.bodyAsJson)
+              .mapLeft { "Request body not found" }
+              .flatMap { body ->
+                Either
+                  .catch { body.mapTo(Watchlist::class.java) }
+                  .mapLeft { it.message ?: "Invalid JSON" }
+              }
+              .flatMap { watchlist ->
+                watchlistService.addWatchlist(accountId, watchlist)
+              }
+          }
+          .getOrHandle { badRequest(context, it) }
       }
 
   fun deleteWatchlist(parent: Router): Route =
     parent.delete(watchlistPath)
       .handler { context ->
-        // TODO
+        Either
+          .catch { UUID.fromString(context.pathParam("accountId")) }
+          .mapLeft { "Invalid account ID" }
+          .flatMap { accountId -> watchlistService.deleteWatchlist(accountId) }
+          .getOrHandle { badRequest(context, it) }
       }
 
-  private fun notFound(context: RoutingContext, message: String): Future<Void> {
+  private fun notFound(context: RoutingContext, message: String): Future<Void> =
+    errorHandlert(context, 404, message)
+
+  private fun badRequest(context: RoutingContext, message: String): Future<Void> =
+    errorHandlert(context, 400, message)
+
+  private fun errorHandlert(context: RoutingContext, status: Int, message: String): Future<Void> {
     logger.error(message)
     return context.response()
-      .setStatusCode(404)
+      .setStatusCode(status)
       .setStatusMessage(message)
       .end(JsonObject().put("message", message).encodePrettily())
   }
