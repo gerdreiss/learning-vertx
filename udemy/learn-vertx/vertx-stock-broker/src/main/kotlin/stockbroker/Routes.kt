@@ -6,10 +6,11 @@ import arrow.core.flatMap
 import arrow.core.getOrHandle
 import io.vertx.core.Future
 import io.vertx.core.json.JsonArray
-import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Route
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.kotlin.core.json.json
+import io.vertx.kotlin.core.json.obj
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -93,25 +94,29 @@ object Routes {
           .getOrHandle { notFound(context, it) }
       }
 
-  fun putWatchlist(parent: Router): Route =
-    parent.put(watchlistPath)
+  fun postWatchlist(parent: Router): Route =
+    parent.post(watchlistPath)
       .handler { context ->
         Either
           .catch { UUID.fromString(context.pathParam("accountId")) }
           .mapLeft { "Invalid account ID" }
           .flatMap { accountId ->
+            logger.debug("Watchlist for $accountId")
             Either
               .fromNullable(context.bodyAsJson)
               .mapLeft { "Request body not found" }
               .flatMap { body ->
+                logger.debug("Watchlist body: $body")
                 Either
                   .catch { body.mapTo(Watchlist::class.java) }
                   .mapLeft { it.message ?: "Invalid JSON" }
               }
               .flatMap { watchlist ->
+                logger.info("Adding $watchlist for $accountId")
                 watchlistService.addWatchlist(accountId, watchlist)
               }
           }
+          .map { context.response().setStatusCode(201).end() }
           .getOrHandle { badRequest(context, it) }
       }
 
@@ -122,21 +127,25 @@ object Routes {
           .catch { UUID.fromString(context.pathParam("accountId")) }
           .mapLeft { "Invalid account ID" }
           .flatMap { accountId -> watchlistService.deleteWatchlist(accountId) }
+          .map { context.response().setStatusCode(200).end() }
           .getOrHandle { badRequest(context, it) }
       }
 
   private fun notFound(context: RoutingContext, message: String): Future<Void> =
-    errorHandlert(context, 404, message)
+    errorHandler(context, 404, message)
 
   private fun badRequest(context: RoutingContext, message: String): Future<Void> =
-    errorHandlert(context, 400, message)
+    errorHandler(context, 400, message)
 
-  private fun errorHandlert(context: RoutingContext, status: Int, message: String): Future<Void> {
+  private fun errorHandler(context: RoutingContext, status: Int, message: String): Future<Void> {
     logger.error(message)
+    val response = json {
+      obj("message" to message)
+    }
     return context.response()
       .setStatusCode(status)
       .setStatusMessage(message)
-      .end(JsonObject().put("message", message).encodePrettily())
+      .end(response.encodePrettily())
   }
 }
 

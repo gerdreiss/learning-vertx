@@ -1,11 +1,11 @@
 package stockbroker
 
-import arrow.core.NonEmptyList
 import io.vertx.core.json.JsonObject
 import java.math.BigDecimal
 
 
 data class Asset(val symbol: String) {
+  constructor(): this("")
   fun toJson(): JsonObject = JsonObject.mapFrom(this)
 }
 
@@ -19,8 +19,7 @@ data class Quote(
   fun toJson(): JsonObject = JsonObject.mapFrom(this)
 }
 
-data class Watchlist(val assets: NonEmptyList<Asset>) {
+data class Watchlist(var assets: List<Asset>) {
+  constructor() : this(listOf())
   fun toJson(): JsonObject = JsonObject.mapFrom(this)
 }
-
-

@@ -69,10 +69,10 @@ class TestRoutes {
   }
 
   @Test
-  fun test_put_invalid_accountId(vertx: Vertx, testContext: VertxTestContext) {
+  fun test_post_invalid_accountId(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
       .create(vertx, WebClientOptions().setDefaultPort(8888))
-      .put("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
+      .post("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
       .send()
       .onComplete(testContext.succeeding { response ->
         assertEquals(400, response.statusCode())
@@ -81,14 +81,47 @@ class TestRoutes {
   }
 
   @Test
-  fun test_put_no_body(vertx: Vertx, testContext: VertxTestContext) {
+  fun test_post_no_body(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
       .create(vertx, WebClientOptions().setDefaultPort(8888))
-      .put("/accounts/${UUID.randomUUID()}/watchlist")
+      .post("/accounts/${UUID.randomUUID()}/watchlist")
       .send()
       .onComplete(testContext.succeeding { response ->
         assertEquals(400, response.statusCode())
         testContext.completeNow()
       })
+  }
+
+  @Test
+  fun test_post_get_and_delete(vertx: Vertx, testContext: VertxTestContext) {
+    val clientOptions = WebClientOptions().setDefaultPort(8888)
+    val url = "/accounts/${UUID.randomUUID()}/watchlist"
+    val body = Watchlist(listOf(Asset("APPL"), Asset("FP"))).toJson()
+
+    WebClient
+      .create(vertx, clientOptions)
+      .post(url)
+      .sendJsonObject(body)
+      .onComplete(testContext.succeeding { response ->
+        assertEquals(201, response.statusCode())
+      }).compose {
+        WebClient
+          .create(vertx, clientOptions)
+          .get(url)
+          .send()
+          .onComplete(testContext.succeeding { response ->
+            assertEquals(200, response.statusCode())
+            assertEquals(body, response.bodyAsJsonObject())
+          })
+      }.compose {
+        WebClient
+          .create(vertx, clientOptions)
+          .delete(url)
+          .send()
+          .onComplete(testContext.succeeding { response ->
+            assertEquals(200, response.statusCode())
+          })
+      }.onSuccess { testContext.completeNow() }
+
   }
 }

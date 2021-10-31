@@ -1,7 +1,7 @@
 package stockbroker
 
 import arrow.core.Either
-import arrow.core.some
+import arrow.core.Option
 import java.util.*
 
 class AssetService(private val store: Repository) {
@@ -29,12 +29,10 @@ class WatchlistService(private val store: Repository) {
     store.getWatchlist(accountId)
       .toEither { "Watch list for account $accountId not found" }
 
-  fun addWatchlist(accountId: UUID, watchlist: Watchlist) =
-    store.putWatchlist(accountId, watchlist)
-      .flatMap { watchlist.some() }
-      .toEither { "Failed to add $watchlist" }
+  fun addWatchlist(accountId: UUID, watchlist: Watchlist): Either<String, Option<Watchlist>> =
+    Either.Right(store.putWatchlist(accountId, watchlist))
 
-  fun deleteWatchlist(accountId: UUID) =
-    store.deleteWatchlist(accountId)
-      .toEither { "Failed to delete watchlist for $accountId" }
+  fun deleteWatchlist(accountId: UUID): Either<String, Option<Watchlist>> =
+    Either.Right(store.deleteWatchlist(accountId))
+
 }

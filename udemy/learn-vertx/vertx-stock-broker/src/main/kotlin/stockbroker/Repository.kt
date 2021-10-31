@@ -41,18 +41,23 @@ object MemStore : Repository {
     assets
 
   override fun getAssetBySymbol(symbol: String): Option<Asset> =
-    assets.find { it.symbol == symbol }.toOption()
+    assets.find { it.symbol == symbol }
+      .toOption()
 
   override fun getQuoteForAsset(asset: Asset): Option<Quote> =
-    quotes.find { it.asset == asset }.toOption()
+    quotes.find { it.asset == asset }
+      .toOption()
 
   override fun getWatchlist(accountId: UUID): Option<Watchlist> =
-    watchlists[accountId].toOption()
+    watchlists[accountId]
+      .toOption()
 
   override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist> =
-    watchlists.put(accountId, watchlist).toOption()
+    watchlists.put(accountId, watchlist)
+      .toOption()
 
   override fun deleteWatchlist(accountId: UUID): Option<Watchlist> =
-    watchlists.remove(accountId).toOption()
+    watchlists.remove(accountId)
+      .toOption()
 
 }

@@ -3,9 +3,11 @@ package stockbroker
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.kotlin.core.json.json
+import io.vertx.kotlin.core.json.obj
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -18,13 +20,15 @@ class MainVerticle : AbstractVerticle() {
   override fun start(startPromise: Promise<Void>) {
 
     val router = Router.router(vertx)
-    router.route().failureHandler(::failureHandler)
+    router.route()
+      .handler(BodyHandler.create())
+      .failureHandler(::failureHandler)
     Routes.root(router)
     Routes.assets(router)
     Routes.asset(router)
     Routes.quotes(router)
     Routes.getWatchlist(router)
-    Routes.putWatchlist(router)
+    Routes.postWatchlist(router)
     Routes.deleteWatchlist(router)
 
     vertx
@@ -48,11 +52,9 @@ class MainVerticle : AbstractVerticle() {
       LOG.error("Route error: ${errorContext.failure()}")
       errorContext.response()
         .setStatusCode(500)
-        .end(
-          JsonObject()
-            .put("message", "Something went wrong")
-            .toBuffer()
-        )
+        .end(json {
+          obj("message" to "Something went wrong")
+        }.toBuffer())
     }
   }
 }
