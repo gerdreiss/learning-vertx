@@ -14,30 +14,37 @@ class RestApiVerticle : AbstractVerticle() {
   }
 
   override fun start(startPromise: Promise<Void>) {
-    val router = Router.router(vertx)
-    router.route()
-      .handler(BodyHandler.create())
-      .failureHandler(FailureHandler())
 
-    Routes.root(router)
-    Routes.assets(router)
-    Routes.asset(router)
-    Routes.quotes(router)
-    Routes.getWatchlist(router)
-    Routes.postWatchlist(router)
-    Routes.deleteWatchlist(router)
+    ConfigLoader.load(vertx)
+      .onFailure(startPromise::fail)
+      .onSuccess { config ->
+        logger.info("Config loaded: $config")
 
-    vertx
-      .createHttpServer()
-      .requestHandler(router)
-      .exceptionHandler { logger.error("HTTP server error: $it") }
-      .listen(8888) { http ->
-        if (http.succeeded()) {
-          startPromise.complete()
-          logger.info("HTTP server started on port 8888")
-        } else {
-          startPromise.fail(http.cause());
-        }
+        val router = Router.router(vertx)
+        router.route()
+          .handler(BodyHandler.create())
+          .failureHandler(FailureHandler())
+
+        Routes.root(router)
+        Routes.assets(router)
+        Routes.asset(router)
+        Routes.quotes(router)
+        Routes.getWatchlist(router)
+        Routes.postWatchlist(router)
+        Routes.deleteWatchlist(router)
+
+        vertx
+          .createHttpServer()
+          .requestHandler(router)
+          .exceptionHandler { logger.error("HTTP server error: $it") }
+          .listen(config.serverPort) { http ->
+            if (http.succeeded()) {
+              startPromise.complete()
+              logger.info("HTTP server started on port ${config.serverPort}")
+            } else {
+              startPromise.fail(http.cause());
+            }
+          }
       }
   }
 }

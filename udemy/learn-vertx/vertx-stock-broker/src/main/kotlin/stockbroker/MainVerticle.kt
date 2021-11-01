@@ -14,6 +14,7 @@ class MainVerticle : AbstractVerticle() {
   }
 
   override fun start(startPromise: Promise<Void>) {
+
     vertx.deployVerticle(
       RestApiVerticle::class.java.name,
       DeploymentOptions().setInstances(processors())
