@@ -14,15 +14,19 @@ class MainVerticle : AbstractVerticle() {
   }
 
   override fun start(startPromise: Promise<Void>) {
-
-    vertx.deployVerticle(
-      RestApiVerticle::class.java.name,
-      DeploymentOptions().setInstances(processors())
-    )
-      .onFailure(startPromise::fail)
-      .onSuccess {
-        logger.info("Deployed {} with id {}", RestApiVerticle::class.java.simpleName, it)
-        startPromise.complete()
+    ConfigLoader.load(vertx)
+      .compose { config ->
+        logger.info("Config: {}", config)
+        val deploymentOptions = DeploymentOptions()
+          .setInstances(processors())
+          .setConfig(config)
+        vertx
+          .deployVerticle(RestApiVerticle::class.java.name, deploymentOptions)
+          .onFailure(startPromise::fail)
+          .onSuccess {
+            logger.info("Deployed {} with id {}", RestApiVerticle::class.java.simpleName, it)
+            startPromise.complete()
+          }
       }
   }
 

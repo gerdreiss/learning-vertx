@@ -1,5 +1,6 @@
 package stockbroker
 
+import io.vertx.config.ConfigRetriever
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
 import io.vertx.ext.web.Router
@@ -14,37 +15,41 @@ class RestApiVerticle : AbstractVerticle() {
   }
 
   override fun start(startPromise: Promise<Void>) {
+    ConfigRetriever.create(vertx)
+      .getConfig { result ->
+        if (result.failed()) {
+          startPromise.fail(result.cause())
+        } else {
+          val router = Router.router(vertx)
 
-    ConfigLoader.load(vertx)
-      .onFailure(startPromise::fail)
-      .onSuccess { config ->
-        logger.info("Config loaded: $config")
+          router.route()
+            .handler(BodyHandler.create())
+            .failureHandler(FailureHandler())
 
-        val router = Router.router(vertx)
-        router.route()
-          .handler(BodyHandler.create())
-          .failureHandler(FailureHandler())
+          Routes.root(router)
+          Routes.assets(router)
+          Routes.asset(router)
+          Routes.quotes(router)
+          Routes.getWatchlist(router)
+          Routes.postWatchlist(router)
+          Routes.deleteWatchlist(router)
 
-        Routes.root(router)
-        Routes.assets(router)
-        Routes.asset(router)
-        Routes.quotes(router)
-        Routes.getWatchlist(router)
-        Routes.postWatchlist(router)
-        Routes.deleteWatchlist(router)
-
-        vertx
-          .createHttpServer()
-          .requestHandler(router)
-          .exceptionHandler { logger.error("HTTP server error: $it") }
-          .listen(config.serverPort) { http ->
-            if (http.succeeded()) {
-              startPromise.complete()
-              logger.info("HTTP server started on port ${config.serverPort}")
-            } else {
-              startPromise.fail(http.cause());
+          val config = result.result()
+          val port = config.getInteger("SERVER_PORT")
+          vertx
+            .createHttpServer()
+            .requestHandler(router)
+            .exceptionHandler { logger.error("HTTP server error: $it") }
+            .listen(port) { http ->
+              if (http.succeeded()) {
+                startPromise.complete()
+                logger.info("HTTP server started on port $port")
+              } else {
+                startPromise.fail(http.cause())
+              }
             }
-          }
+        }
       }
   }
 }
+
