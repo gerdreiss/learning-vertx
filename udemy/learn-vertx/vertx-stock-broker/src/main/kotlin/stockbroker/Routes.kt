@@ -1,7 +1,8 @@
 package stockbroker
 
-import io.vertx.ext.web.Route
+import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
 
 object Routes {
 
@@ -10,7 +11,13 @@ object Routes {
   private val quoteService = QuoteService(persistentStore)
   private val watchlistService = WatchlistService(persistentStore)
 
-  fun root(parent: Router): Route =
+  fun routes(vertx: Vertx): Router {
+    val parent = Router.router(vertx)
+
+    parent.route()
+      .handler(BodyHandler.create())
+      .failureHandler(FailureHandler())
+
     parent.get("/")
       .respond { context ->
         context.response()
@@ -18,30 +25,23 @@ object Routes {
           .end("<center><h1>hello!</h1></center>")
       }
 
-  fun assets(parent: Router): Route =
-    parent.get("/assets")
-      .handler(GetAssetsHandler(assetService))
+    val assetsPath = "/assets"
+    val assetBySymbolPath = "$assetsPath/:symbol"
+    val quotesPath = "$assetBySymbolPath/quotes"
+    val accountsPath = "/accounts"
+    val accountByIdPath = "$accountsPath/:accountId"
+    val watchlistPath = "$accountByIdPath/watchlist"
 
-  fun asset(parent: Router): Route =
-    parent.get("/assets/:symbol")
-      .handler(GetAssetHandler(assetService))
+    parent.get(assetsPath).handler(GetAssetsHandler(assetService))
+    parent.get(assetBySymbolPath).handler(GetAssetHandler(assetService))
+    parent.get(quotesPath).handler(GetQuotesHandler(assetService, quoteService))
+    parent.get(watchlistPath).handler(GetWatchlistHandler(watchlistService))
+    parent.post(watchlistPath).handler(AddWatchlistHandler(watchlistService))
+    parent.delete(watchlistPath).handler(DeleteWatchlistHandler(watchlistService))
 
-  fun quotes(parent: Router): Route =
-    parent.get("/assets/:symbol/quotes")
-      .handler(GetQuotesHandler(assetService, quoteService))
+    return parent
+  }
 
-  private const val watchlistPath = "/accounts/:accountId/watchlist"
 
-  fun getWatchlist(parent: Router): Route =
-    parent.get(watchlistPath)
-      .handler(GetWatchlistHandler(watchlistService))
-
-  fun postWatchlist(parent: Router): Route =
-    parent.post(watchlistPath)
-      .handler(AddWatchlistHandler(watchlistService))
-
-  fun deleteWatchlist(parent: Router): Route =
-    parent.delete(watchlistPath)
-      .handler(DeleteWatchlistHandler(watchlistService))
 }
 

@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MainKt" type="JetRunConfigurationType" nameIsGenerated="true">
+    <envs>
+      <env name="SERVER_PORT" value="8081" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="stockbroker.MainKt" />
+    <module name="vertx-stock-broker" />
+    <shortenClasspath name="NONE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

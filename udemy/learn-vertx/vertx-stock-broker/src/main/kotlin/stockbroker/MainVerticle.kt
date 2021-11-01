@@ -16,7 +16,7 @@ class MainVerticle : AbstractVerticle() {
   override fun start(startPromise: Promise<Void>) {
     ConfigLoader.load(vertx)
       .compose { config ->
-        logger.info("Config: {}", config)
+        logger.debug("Config: {}", config)
         val deploymentOptions = DeploymentOptions()
           .setInstances(processors())
           .setConfig(config)
