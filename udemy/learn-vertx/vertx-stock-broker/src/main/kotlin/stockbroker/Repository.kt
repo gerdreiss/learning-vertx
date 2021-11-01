@@ -3,8 +3,7 @@ package stockbroker
 import arrow.core.Option
 import arrow.core.nonEmptyListOf
 import arrow.core.toOption
-
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
 sealed interface Repository {
@@ -17,6 +16,7 @@ sealed interface Repository {
 }
 
 object MemStore : Repository {
+  private val watchlists = mutableMapOf<UUID, Watchlist>()
   private val assets = nonEmptyListOf(
     Asset("AAPL"),
     Asset("AMZN"),
@@ -35,7 +35,6 @@ object MemStore : Repository {
       ThreadLocalRandom.current().nextDouble(1.0, 100.0).toBigDecimal(),
     )
   }
-  private val watchlists = mutableMapOf<UUID, Watchlist>()
 
   override fun getAllAssets(): List<Asset> =
     assets
@@ -59,5 +58,4 @@ object MemStore : Repository {
   override fun deleteWatchlist(accountId: UUID): Option<Watchlist> =
     watchlists.remove(accountId)
       .toOption()
-
 }

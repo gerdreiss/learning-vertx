@@ -11,7 +11,7 @@ import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 
 abstract class AbstractHandler : Handler<RoutingContext> {
 
@@ -49,7 +49,6 @@ class GetAssetsHandler(
     logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
     context.json(response)
   }
-
 }
 
 class GetAssetHandler(
@@ -175,5 +174,4 @@ class FailureHandler : AbstractHandler() {
         .end(response.toBuffer())
     }
   }
-
 }

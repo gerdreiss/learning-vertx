@@ -3,9 +3,8 @@ package stockbroker
 import io.vertx.core.json.JsonObject
 import java.math.BigDecimal
 
-
 data class Asset(val symbol: String) {
-  constructor(): this("")
+  constructor() : this("")
   fun toJson(): JsonObject = JsonObject.mapFrom(this)
 }
 

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
 @ExtendWith(VertxExtension::class)
@@ -31,16 +31,18 @@ class TestRoutes {
       .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets")
       .send()
-      .onComplete(testContext.succeeding { response ->
-        val json = response.bodyAsJsonArray()
-        println(json)
-        assertEquals(
-          """[{"symbol":"AAPL"},{"symbol":"AMZN"},{"symbol":"FB"},{"symbol":"GOOG"},{"symbol":"MSTF"},{"symbol":"NFLX"},{"symbol":"TSLA"}]""",
-          json.encode()
-        )
-        assertEquals(200, response.statusCode())
-        testContext.completeNow()
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          val json = response.bodyAsJsonArray()
+          println(json)
+          assertEquals(
+            """[{"symbol":"AAPL"},{"symbol":"AMZN"},{"symbol":"FB"},{"symbol":"GOOG"},{"symbol":"MSTF"},{"symbol":"NFLX"},{"symbol":"TSLA"}]""",
+            json.encode()
+          )
+          assertEquals(200, response.statusCode())
+          testContext.completeNow()
+        }
+      )
   }
 
   @Test
@@ -49,13 +51,15 @@ class TestRoutes {
       .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets/AMZN")
       .send()
-      .onComplete(testContext.succeeding { response ->
-        val json = response.bodyAsJsonObject()
-        println(json)
-        assertEquals("""{"symbol":"AMZN"}""", json.encode())
-        assertEquals(200, response.statusCode())
-        testContext.completeNow()
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          val json = response.bodyAsJsonObject()
+          println(json)
+          assertEquals("""{"symbol":"AMZN"}""", json.encode())
+          assertEquals(200, response.statusCode())
+          testContext.completeNow()
+        }
+      )
   }
 
   @Test
@@ -64,13 +68,15 @@ class TestRoutes {
       .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets/AMZN/quotes")
       .send()
-      .onComplete(testContext.succeeding { response ->
-        val json = response.bodyAsJsonObject()
-        println(json)
-        assertEquals("AMZN", json.getJsonObject("asset").getString("symbol"))
-        assertEquals(200, response.statusCode())
-        testContext.completeNow()
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          val json = response.bodyAsJsonObject()
+          println(json)
+          assertEquals("AMZN", json.getJsonObject("asset").getString("symbol"))
+          assertEquals(200, response.statusCode())
+          testContext.completeNow()
+        }
+      )
   }
 
   @Test
@@ -79,10 +85,12 @@ class TestRoutes {
       .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .post("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
       .send()
-      .onComplete(testContext.succeeding { response ->
-        assertEquals(400, response.statusCode())
-        testContext.completeNow()
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          assertEquals(400, response.statusCode())
+          testContext.completeNow()
+        }
+      )
   }
 
   @Test
@@ -91,10 +99,12 @@ class TestRoutes {
       .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .post("/accounts/${UUID.randomUUID()}/watchlist")
       .send()
-      .onComplete(testContext.succeeding { response ->
-        assertEquals(400, response.statusCode())
-        testContext.completeNow()
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          assertEquals(400, response.statusCode())
+          testContext.completeNow()
+        }
+      )
   }
 
   @Test
@@ -106,27 +116,32 @@ class TestRoutes {
     webClient
       .post(url)
       .sendJsonObject(watchlist)
-      .onComplete(testContext.succeeding { response ->
-        assertEquals(201, response.statusCode())
-      })
+      .onComplete(
+        testContext.succeeding { response ->
+          assertEquals(201, response.statusCode())
+        }
+      )
       .compose {
         webClient
           .get(url)
           .send()
-          .onComplete(testContext.succeeding { response ->
-            assertEquals(200, response.statusCode())
-            assertEquals(watchlist, response.bodyAsJsonObject())
-          })
+          .onComplete(
+            testContext.succeeding { response ->
+              assertEquals(200, response.statusCode())
+              assertEquals(watchlist, response.bodyAsJsonObject())
+            }
+          )
       }
       .compose {
         webClient
           .delete(url)
           .send()
-          .onComplete(testContext.succeeding { response ->
-            assertEquals(200, response.statusCode())
-          })
+          .onComplete(
+            testContext.succeeding { response ->
+              assertEquals(200, response.statusCode())
+            }
+          )
       }
       .onSuccess { testContext.completeNow() }
-
   }
 }

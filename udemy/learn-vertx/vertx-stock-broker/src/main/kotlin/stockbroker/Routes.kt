@@ -41,7 +41,4 @@ object Routes {
 
     return parent
   }
-
-
 }
-

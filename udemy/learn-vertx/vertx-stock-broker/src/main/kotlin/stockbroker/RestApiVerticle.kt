@@ -38,4 +38,3 @@ class RestApiVerticle : AbstractVerticle() {
       }
   }
 }
-

@@ -33,5 +33,4 @@ class MainVerticle : AbstractVerticle() {
   private fun processors(): Int =
     // to ensure that there is no problem in virtualized containers
     max(1, Runtime.getRuntime().availableProcessors())
-
 }
