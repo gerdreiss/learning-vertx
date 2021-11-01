@@ -43,10 +43,10 @@ class GetAssetsHandler(
 
   override fun handle(context: RoutingContext) {
     val assets = assetService.getAll()
-    logger.info("Path ${context.normalizedPath()} responds with\n$assets")
     val response = assets.fold(JsonArray()) { jsonArray, asset ->
       jsonArray.add(asset.toJson())
     }
+    logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
     context.json(response)
   }
 
@@ -62,7 +62,7 @@ class GetAssetHandler(
     assetService.getBySymbol(context.pathParam("symbol"))
       .map { asset ->
         val response = asset.toJson()
-        logger.debug("Path ${context.normalizedPath()} responds with\n$response")
+        logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
         context.json(response)
       }
       .getOrHandle { notFound(context, it) }

@@ -11,7 +11,7 @@
   <logger name="io.vertx" level="info"/>
   <logger name="org.flywaydb.core" level="info"/>
 
-  <root level="INFO">
+  <root level="DEBUG">
     <appender-ref ref="STDOUT"/>
   </root>
 
