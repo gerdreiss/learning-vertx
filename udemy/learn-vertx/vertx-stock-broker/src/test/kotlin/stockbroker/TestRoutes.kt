@@ -15,15 +15,20 @@ import java.util.concurrent.ThreadLocalRandom
 @ExtendWith(VertxExtension::class)
 class TestRoutes {
 
+  companion object {
+    private const val PORT = 9000
+  }
+
   @BeforeEach
   fun deploy_verticle(vertx: Vertx, testContext: VertxTestContext) {
+    System.setProperty("SERVER_PORT", PORT.toString())
     vertx.deployVerticle(MainVerticle(), testContext.succeeding { testContext.completeNow() })
   }
 
   @Test
   fun returns_all_assets(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
-      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets")
       .send()
       .onComplete(testContext.succeeding { response ->
@@ -41,7 +46,7 @@ class TestRoutes {
   @Test
   fun returns_asset(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
-      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets/AMZN")
       .send()
       .onComplete(testContext.succeeding { response ->
@@ -56,7 +61,7 @@ class TestRoutes {
   @Test
   fun returns_quotes_for_asset(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
-      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .get("/assets/AMZN/quotes")
       .send()
       .onComplete(testContext.succeeding { response ->
@@ -71,7 +76,7 @@ class TestRoutes {
   @Test
   fun test_post_invalid_accountId(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
-      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .post("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
       .send()
       .onComplete(testContext.succeeding { response ->
@@ -83,7 +88,7 @@ class TestRoutes {
   @Test
   fun test_post_no_body(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
-      .create(vertx, WebClientOptions().setDefaultPort(8888))
+      .create(vertx, WebClientOptions().setDefaultPort(PORT))
       .post("/accounts/${UUID.randomUUID()}/watchlist")
       .send()
       .onComplete(testContext.succeeding { response ->
@@ -94,7 +99,7 @@ class TestRoutes {
 
   @Test
   fun test_post_get_and_delete(vertx: Vertx, testContext: VertxTestContext) {
-    val webClient = WebClient.create(vertx, WebClientOptions().setDefaultPort(8888))
+    val webClient = WebClient.create(vertx, WebClientOptions().setDefaultPort(PORT))
     val url = "/accounts/${UUID.randomUUID()}/watchlist"
     val watchlist = Watchlist(listOf(Asset("APPL"), Asset("FP"))).toJson()
 

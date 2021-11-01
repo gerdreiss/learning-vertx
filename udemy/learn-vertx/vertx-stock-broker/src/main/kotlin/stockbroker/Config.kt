@@ -27,7 +27,7 @@ object ConfigLoader {
         configStoreOptionsOf(
           type = "sys",
           config = json {
-            obj("keys" to jsonArrayOf(SERVER_PORT))
+            obj("cache" to false)
           }
         ),
         configStoreOptionsOf(

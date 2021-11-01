@@ -22,6 +22,7 @@ class MainVerticle : AbstractVerticle() {
       .onFailure(startPromise::fail)
       .onSuccess {
         logger.info("Deployed {} with id {}", RestApiVerticle::class.java.simpleName, it)
+        startPromise.complete()
       }
   }
 
