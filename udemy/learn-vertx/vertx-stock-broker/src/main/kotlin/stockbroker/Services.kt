@@ -13,7 +13,7 @@ class Services(
 ) {
   companion object {
     fun create(vertx: Vertx, brokerConfig: BrokerConfig): Services {
-      val persistentStore = PgStore(brokerConfig.pgPool(vertx))
+      val persistentStore = DbStore(brokerConfig.dbConnectionPool(vertx))
       val assetService = AssetService(persistentStore)
       val quoteService = QuoteService(persistentStore)
       val watchlistService = WatchlistService(persistentStore)

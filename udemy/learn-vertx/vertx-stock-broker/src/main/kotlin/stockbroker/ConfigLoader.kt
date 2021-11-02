@@ -13,6 +13,7 @@ import io.vertx.kotlin.core.json.obj
 import io.vertx.kotlin.pgclient.pgConnectOptionsOf
 import io.vertx.kotlin.sqlclient.poolOptionsOf
 import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.Pool
 
 object ConfigLoader {
 
@@ -74,7 +75,7 @@ class BrokerConfig(
   fun socketAddress(): SocketAddress =
     SocketAddress.inetSocketAddress(serverConfig.port, serverConfig.host)
 
-  fun pgPool(vertx: Vertx): PgPool =
+  fun dbConnectionPool(vertx: Vertx): Pool =
     PgPool.pool(
       vertx,
       pgConnectOptionsOf(

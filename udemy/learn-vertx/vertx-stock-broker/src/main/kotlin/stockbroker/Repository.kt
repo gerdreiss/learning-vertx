@@ -1,10 +1,12 @@
 package stockbroker
 
 import arrow.core.Option
+import arrow.core.firstOrNone
 import arrow.core.nonEmptyListOf
 import arrow.core.toOption
 import io.vertx.core.Future
-import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.Pool
+import io.vertx.sqlclient.templates.SqlTemplate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -19,10 +21,10 @@ sealed interface Repository {
   fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>>
 }
 
-class PgStore(private val db: PgPool) : Repository {
+class DbStore(private val db: Pool) : Repository {
 
   companion object {
-    private val logger: Logger = LoggerFactory.getLogger(PgStore::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(DbStore::class.java)
   }
 
   override fun getAllAssets(): Future<List<Asset>> =
@@ -31,13 +33,29 @@ class PgStore(private val db: PgPool) : Repository {
       .map { it.map { row -> Asset(row.getString("symbol")) } }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
-  override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> {
-    TODO("Not yet implemented")
-  }
+  override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> =
+    SqlTemplate.forQuery(db, "select * from broker.assets a where a.symbol = #{symbol}")
+      .execute(mapOf("symbol" to symbol))
+      .map { it.map { row -> Asset(row.getString("symbol")) } }
+      .map { it.firstOrNone() }
+      .onFailure { logger.error("Fetching assets failed.", it) }
 
-  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> {
-    TODO("Not yet implemented")
-  }
+  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
+    SqlTemplate.forQuery(db, "select * from broker.quotes q where q.asset = #{symbol}")
+      .execute(mapOf("symbol" to asset.symbol))
+      .map {
+        it.map { row ->
+          Quote(
+            bid = row.getBigDecimal("bid"),
+            ask = row.getBigDecimal("ask"),
+            lastPrice = row.getBigDecimal("last_price"),
+            volume = row.getBigDecimal("volume"),
+            asset = Asset(row.getString("asset"))
+          )
+        }
+      }
+      .map { it.firstOrNone() }
+      .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> {
     TODO("Not yet implemented")
