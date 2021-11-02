@@ -38,12 +38,7 @@ class DbStore(private val db: Pool) : Repository {
       .forQuery(db, "select * from broker.assets a where a.symbol = #{symbol}")
       .mapTo(AssetEntity::class.java)
       .execute(mapOf("symbol" to symbol))
-      .map { rows ->
-        rows.firstOrNone()
-          .map { entity ->
-            entity.toAsset()
-          }
-      }
+      .map { it.firstOrNone().map { entity -> entity.toAsset() } }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
@@ -54,12 +49,7 @@ class DbStore(private val db: Pool) : Repository {
       )
       .mapTo(QuoteEntity::class.java)
       .execute(mapOf("symbol" to asset.symbol))
-      .map { rows ->
-        rows.firstOrNone()
-          .map { entity ->
-            entity.toQuote()
-          }
-      }
+      .map { it.firstOrNone().map { entity -> entity.toQuote() } }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> {
