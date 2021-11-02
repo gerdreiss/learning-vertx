@@ -12,6 +12,6 @@ fun main() {
     .deployVerticle(MainVerticle())
     .onFailure { logger.error("Failed to deploy MainVerticle: $it") }
     .onSuccess {
-      logger.info("Deployed {} with id {}", RestApiVerticle::class.java.simpleName, it)
+      logger.info("Deployed {} with id {}", MainVerticle::class.java.simpleName, it)
     }
 }

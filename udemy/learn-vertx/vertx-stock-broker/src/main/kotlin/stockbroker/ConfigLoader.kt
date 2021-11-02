@@ -12,30 +12,77 @@ import io.vertx.kotlin.core.json.obj
 
 object ConfigLoader {
 
-  private const val SERVER_PORT = "SERVER_PORT"
+  const val SERVER_PORT = "SERVER_PORT"
+  const val SERVER_HOST = "SERVER_HOST"
+  const val DATABASE_HOST = "DATABASE_HOST"
+  const val DATABASE_PORT = "DATABASE_PORT"
+  const val DATABASE_NAME = "DATABASE_NAME"
+  const val DATABASE_USER = "DATABASE_USER"
+  const val DATABASE_PASSWORD = "DATABASE_PASSWORD"
 
-  fun load(vertx: Vertx): Future<JsonObject> {
+  private val EXPOSED_KEYS = jsonArrayOf(
+    SERVER_PORT,
+    SERVER_HOST,
+    DATABASE_HOST,
+    DATABASE_PORT,
+    DATABASE_NAME,
+    DATABASE_USER,
+    DATABASE_PASSWORD
+  )
 
-    val retrieverOptions = configRetrieverOptionsOf(
-      stores = listOf(
-        configStoreOptionsOf(
-          type = "file",
-          format = "yaml",
-          config = json { obj("path" to "application.yml") }
-        ),
-        configStoreOptionsOf(
-          type = "sys",
-          config = json { obj("cache" to false) }
-        ),
-        configStoreOptionsOf(
-          type = "env",
-          config = json { obj("keys" to jsonArrayOf(SERVER_PORT)) }
+  fun load(vertx: Vertx): Future<JsonObject> =
+    ConfigRetriever
+      .create(
+        vertx,
+        configRetrieverOptionsOf(
+          stores = listOf(
+            configStoreOptionsOf(
+              type = "file",
+              format = "yaml",
+              config = json { obj("path" to "application.yml") }
+            ),
+            configStoreOptionsOf(
+              type = "sys",
+              config = json { obj("cache" to false) }
+            ),
+            configStoreOptionsOf(
+              type = "env",
+              config = json { obj("keys" to EXPOSED_KEYS) }
+            )
+          )
         )
       )
-    )
-
-    return ConfigRetriever
-      .create(vertx, retrieverOptions)
       .config
+}
+
+class DbConfig(
+  val dbHost: String,
+  val dbPort: Int,
+  val dbName: String,
+  val dbUser: String,
+  val dbPass: String
+) {
+  companion object {
+    fun fromConfig(config: JsonObject) =
+      DbConfig(
+        dbHost = config.getString(ConfigLoader.DATABASE_HOST),
+        dbPort = config.getInteger(ConfigLoader.DATABASE_PORT),
+        dbName = config.getString(ConfigLoader.DATABASE_NAME),
+        dbUser = config.getString(ConfigLoader.DATABASE_USER),
+        dbPass = config.getString(ConfigLoader.DATABASE_PASSWORD),
+      )
+  }
+}
+
+class ServerConfig(
+  val host: String,
+  val port: Int
+) {
+  companion object {
+    fun fromConfig(config: JsonObject) =
+      ServerConfig(
+        host = config.getString(ConfigLoader.SERVER_HOST),
+        port = config.getInteger(ConfigLoader.SERVER_PORT)
+      )
   }
 }

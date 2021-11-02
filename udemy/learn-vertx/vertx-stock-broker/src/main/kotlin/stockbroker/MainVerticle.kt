@@ -2,7 +2,9 @@ package stockbroker
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.DeploymentOptions
+import io.vertx.core.Future
 import io.vertx.core.Promise
+import io.vertx.core.json.JsonObject
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -15,18 +17,32 @@ class MainVerticle : AbstractVerticle() {
 
   override fun start(startPromise: Promise<Void>) {
     ConfigLoader.load(vertx)
-      .compose { config ->
+      .flatMap { config ->
         logger.debug("Config: {}", config)
-        val deploymentOptions = DeploymentOptions()
-          .setInstances(processors())
-          .setConfig(config)
-        vertx
-          .deployVerticle(RestApiVerticle::class.java.name, deploymentOptions)
-          .onFailure(startPromise::fail)
-          .onSuccess {
-            logger.info("Deployed {} with id {}", RestApiVerticle::class.java.simpleName, it)
-            startPromise.complete()
+        FlywayMigration.migrateDatabase(vertx, DbConfig.fromConfig(config))
+          .flatMap {
+            logger.debug("DB migration finished...")
+            deployVerticle(RestApiVerticle::class.java, config, startPromise)
+              .onSuccess {
+                startPromise.complete()
+              }
           }
+      }
+  }
+
+  private fun <T : AbstractVerticle> deployVerticle(
+    clazz: Class<T>,
+    config: JsonObject,
+    startPromise: Promise<Void>
+  ): Future<String> {
+    val deploymentOptions = DeploymentOptions()
+      .setInstances(processors())
+      .setConfig(config)
+    return vertx
+      .deployVerticle(clazz.name, deploymentOptions)
+      .onFailure(startPromise::fail)
+      .onSuccess {
+        logger.info("Deployed {} with id {}..", RestApiVerticle::class.java.simpleName, it)
       }
   }
 

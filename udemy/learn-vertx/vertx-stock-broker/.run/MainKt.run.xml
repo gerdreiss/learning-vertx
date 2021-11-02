@@ -1,7 +1,13 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="MainKt" type="JetRunConfigurationType" nameIsGenerated="true">
     <envs>
-      <env name="SERVER_PORT" value="8081" />
+      <env name="SERVER_PORT" value="9001" />
+      <env name="SERVER_HOST" value="0.0.0.0" />
+      <env name="DATABASE_HOST" value="localhost" />
+      <env name="DATABASE_PORT" value="5432" />
+      <env name="DATABASE_NAME" value="vertx-stock-broker" />
+      <env name="DATABASE_USER" value="postgres" />
+      <env name="DATABASE_PASSWORD" value="secret" />
     </envs>
     <option name="MAIN_CLASS_NAME" value="stockbroker.MainKt" />
     <module name="vertx-stock-broker" />

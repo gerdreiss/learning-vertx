@@ -19,17 +19,15 @@ class RestApiVerticle : AbstractVerticle() {
         if (result.failed()) {
           startPromise.fail(result.cause())
         } else {
-          val config = result.result()
-          val port = config.getInteger("SERVER_PORT")
-          val host = config.getString("SERVER_HOST")
+          val config = ServerConfig.fromConfig(result.result())
           vertx
             .createHttpServer()
             .requestHandler(Routes.routes(vertx))
             .exceptionHandler { logger.error("HTTP server error: $it") }
-            .listen(SocketAddress.inetSocketAddress(port, host)) { http ->
+            .listen(SocketAddress.inetSocketAddress(config.port, config.host)) { http ->
               if (http.succeeded()) {
                 startPromise.complete()
-                logger.info("HTTP server started on port $port")
+                logger.info("HTTP server started on port ${config.port}")
               } else {
                 startPromise.fail(http.cause())
               }

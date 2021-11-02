@@ -121,7 +121,7 @@ class TestRoutes {
           assertEquals(201, response.statusCode())
         }
       )
-      .compose {
+      .flatMap {
         webClient
           .get(url)
           .send()
@@ -132,7 +132,7 @@ class TestRoutes {
             }
           )
       }
-      .compose {
+      .flatMap {
         webClient
           .delete(url)
           .send()
