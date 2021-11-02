@@ -4,11 +4,15 @@ import io.vertx.config.ConfigRetriever
 import io.vertx.core.Future
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import io.vertx.core.net.SocketAddress
 import io.vertx.kotlin.config.configRetrieverOptionsOf
 import io.vertx.kotlin.config.configStoreOptionsOf
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.jsonArrayOf
 import io.vertx.kotlin.core.json.obj
+import io.vertx.kotlin.pgclient.pgConnectOptionsOf
+import io.vertx.kotlin.sqlclient.poolOptionsOf
+import io.vertx.pgclient.PgPool
 
 object ConfigLoader {
 
@@ -53,6 +57,37 @@ object ConfigLoader {
         )
       )
       .config
+}
+
+class BrokerConfig(
+  private val serverConfig: ServerConfig,
+  private val dbConfig: DbConfig
+) {
+  companion object {
+    fun fromConfig(config: JsonObject) =
+      BrokerConfig(
+        ServerConfig.fromConfig(config),
+        DbConfig.fromConfig(config)
+      )
+  }
+
+  fun socketAddress(): SocketAddress =
+    SocketAddress.inetSocketAddress(serverConfig.port, serverConfig.host)
+
+  fun pgPool(vertx: Vertx): PgPool =
+    PgPool.pool(
+      vertx,
+      pgConnectOptionsOf(
+        host = dbConfig.dbHost,
+        port = dbConfig.dbPort,
+        database = dbConfig.dbName,
+        user = dbConfig.dbUser,
+        password = dbConfig.dbPass
+      ),
+      poolOptionsOf(
+        maxSize = 4
+      )
+    )
 }
 
 class DbConfig(

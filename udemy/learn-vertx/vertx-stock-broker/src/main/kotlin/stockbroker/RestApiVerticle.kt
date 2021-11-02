@@ -3,7 +3,6 @@ package stockbroker
 import io.vertx.config.ConfigRetriever
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
-import io.vertx.core.net.SocketAddress
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,17 +18,21 @@ class RestApiVerticle : AbstractVerticle() {
         if (result.failed()) {
           startPromise.fail(result.cause())
         } else {
-          val config = ServerConfig.fromConfig(result.result())
+
+          val brokerConfig = BrokerConfig.fromConfig(result.result())
+          val services = Services.create(vertx, brokerConfig)
+          val routes = Routes.routes(vertx, services)
+
           vertx
             .createHttpServer()
-            .requestHandler(Routes.routes(vertx))
+            .requestHandler(routes)
             .exceptionHandler { logger.error("HTTP server error: $it") }
-            .listen(SocketAddress.inetSocketAddress(config.port, config.host)) { http ->
-              if (http.succeeded()) {
+            .listen(brokerConfig.socketAddress()) { httpServer ->
+              if (httpServer.succeeded()) {
                 startPromise.complete()
-                logger.info("HTTP server started on port ${config.port}")
+                logger.info("HTTP server started on port ${httpServer.result().actualPort()}")
               } else {
-                startPromise.fail(http.cause())
+                startPromise.fail(httpServer.cause())
               }
             }
         }

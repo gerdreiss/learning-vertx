@@ -14,7 +14,6 @@ object FlywayMigration {
     vertx
       .executeBlocking<Void> { promise ->
         val jdbcUrl = "jdbc:postgresql://${config.dbHost}:${config.dbPort}/${config.dbName}"
-        logger.debug("Migrating DB schema using JDBC URL: $jdbcUrl")
         Flyway.configure()
           .locations("db/migration/postgres")
           .dataSource(jdbcUrl, config.dbUser, config.dbPass)

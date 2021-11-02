@@ -1,10 +1,8 @@
 package stockbroker
 
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.DeploymentOptions
-import io.vertx.core.Future
 import io.vertx.core.Promise
-import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.core.deploymentOptionsOf
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -18,31 +16,29 @@ class MainVerticle : AbstractVerticle() {
   override fun start(startPromise: Promise<Void>) {
     ConfigLoader.load(vertx)
       .flatMap { config ->
-        logger.debug("Config: {}", config)
-        FlywayMigration.migrateDatabase(vertx, DbConfig.fromConfig(config))
-          .flatMap {
-            logger.debug("DB migration finished...")
-            deployVerticle(RestApiVerticle::class.java, config, startPromise)
+        logger.debug("Config loaded: {}", config)
+        vertx
+          .executeBlocking<DbConfig> {
+            it.complete(DbConfig.fromConfig(config))
+          }
+          .flatMap { dbConfig ->
+            logger.info("Start DB migration...")
+            FlywayMigration.migrateDatabase(vertx, dbConfig)
               .onSuccess {
-                startPromise.complete()
+                logger.info("DB migration finished...")
               }
           }
-      }
-  }
-
-  private fun <T : AbstractVerticle> deployVerticle(
-    clazz: Class<T>,
-    config: JsonObject,
-    startPromise: Promise<Void>
-  ): Future<String> {
-    val deploymentOptions = DeploymentOptions()
-      .setInstances(processors())
-      .setConfig(config)
-    return vertx
-      .deployVerticle(clazz.name, deploymentOptions)
-      .onFailure(startPromise::fail)
-      .onSuccess {
-        logger.info("Deployed {} with id {}..", RestApiVerticle::class.java.simpleName, it)
+          .flatMap {
+            logger.info("Deploying verticles...")
+            val deploymentOptions = deploymentOptionsOf(instances = processors(), config = config)
+            vertx
+              .deployVerticle(RestApiVerticle::class.java, deploymentOptions)
+              .onSuccess {
+                logger.info("Deployed {} with id {}..", RestApiVerticle::class.java.simpleName, it)
+              }
+          }
+          .onSuccess { startPromise.complete() }
+          .onFailure(startPromise::fail)
       }
   }
 

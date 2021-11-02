@@ -3,6 +3,7 @@ package stockbroker
 import arrow.core.Option
 import arrow.core.nonEmptyListOf
 import arrow.core.toOption
+import io.vertx.pgclient.PgPool
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
@@ -13,6 +14,32 @@ sealed interface Repository {
   fun getWatchlist(accountId: UUID): Option<Watchlist>
   fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist>
   fun deleteWatchlist(accountId: UUID): Option<Watchlist>
+}
+
+class PgStore(pgPool: PgPool) : Repository {
+  override fun getAllAssets(): List<Asset> {
+    TODO("Not yet implemented")
+  }
+
+  override fun getAssetBySymbol(symbol: String): Option<Asset> {
+    TODO("Not yet implemented")
+  }
+
+  override fun getQuoteForAsset(asset: Asset): Option<Quote> {
+    TODO("Not yet implemented")
+  }
+
+  override fun getWatchlist(accountId: UUID): Option<Watchlist> {
+    TODO("Not yet implemented")
+  }
+
+  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist> {
+    TODO("Not yet implemented")
+  }
+
+  override fun deleteWatchlist(accountId: UUID): Option<Watchlist> {
+    TODO("Not yet implemented")
+  }
 }
 
 object MemStore : Repository {

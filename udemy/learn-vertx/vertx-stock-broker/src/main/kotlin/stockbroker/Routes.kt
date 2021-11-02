@@ -6,12 +6,8 @@ import io.vertx.ext.web.handler.BodyHandler
 
 object Routes {
 
-  private val persistentStore = MemStore
-  private val assetService = AssetService(persistentStore)
-  private val quoteService = QuoteService(persistentStore)
-  private val watchlistService = WatchlistService(persistentStore)
+  fun routes(vertx: Vertx, services: Services): Router {
 
-  fun routes(vertx: Vertx): Router {
     val parent = Router.router(vertx)
 
     parent.route()
@@ -32,12 +28,12 @@ object Routes {
     val accountByIdPath = "$accountsPath/:accountId"
     val watchlistPath = "$accountByIdPath/watchlist"
 
-    parent.get(assetsPath).handler(GetAssetsHandler(assetService))
-    parent.get(assetBySymbolPath).handler(GetAssetHandler(assetService))
-    parent.get(quotesPath).handler(GetQuotesHandler(assetService, quoteService))
-    parent.get(watchlistPath).handler(GetWatchlistHandler(watchlistService))
-    parent.post(watchlistPath).handler(AddWatchlistHandler(watchlistService))
-    parent.delete(watchlistPath).handler(DeleteWatchlistHandler(watchlistService))
+    parent.get(assetsPath).handler(GetAssetsHandler(services.assetService))
+    parent.get(assetBySymbolPath).handler(GetAssetHandler(services.assetService))
+    parent.get(quotesPath).handler(GetQuotesHandler(services.assetService, services.quoteService))
+    parent.get(watchlistPath).handler(GetWatchlistHandler(services.watchlistService))
+    parent.post(watchlistPath).handler(AddWatchlistHandler(services.watchlistService))
+    parent.delete(watchlistPath).handler(DeleteWatchlistHandler(services.watchlistService))
 
     return parent
   }
