@@ -2,7 +2,6 @@ package stockbroker
 
 import arrow.core.Either
 import arrow.core.flatMap
-import arrow.core.getOrHandle
 import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
@@ -23,7 +22,7 @@ abstract class AbstractHandler : Handler<RoutingContext> {
   protected fun badRequest(context: RoutingContext, message: String): Future<Void> =
     errorHandler(context, 400, message)
 
-  private fun errorHandler(context: RoutingContext, status: Int, message: String): Future<Void> {
+  protected fun errorHandler(context: RoutingContext, status: Int, message: String): Future<Void> {
     logger.error(message)
     val response = json {
       obj("message" to message)
@@ -42,12 +41,20 @@ class GetAssetsHandler(
     get() = LoggerFactory.getLogger(GetAssetsHandler::class.java)
 
   override fun handle(context: RoutingContext) {
-    val assets = assetService.getAll()
-    val response = assets.fold(JsonArray()) { jsonArray, asset ->
-      jsonArray.add(asset.toJson())
-    }
-    logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
-    context.json(response)
+    assetService.getAll()
+      .onSuccess {
+        val response = it
+          .fold(JsonArray()) { jsonArray, asset ->
+            jsonArray.add(asset.toJson())
+          }
+        logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
+        context.json(response)
+      }
+      .onFailure { error ->
+        val errormessage = "Failed fetching assets"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 
@@ -58,13 +65,23 @@ class GetAssetHandler(
     get() = LoggerFactory.getLogger(GetAssetHandler::class.java)
 
   override fun handle(context: RoutingContext) {
-    assetService.getBySymbol(context.pathParam("symbol"))
-      .map { asset ->
-        val response = asset.toJson()
-        logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
-        context.json(response)
+    val symbol = context.pathParam("symbol")
+    assetService.getBySymbol(symbol)
+      .onSuccess {
+        it.fold(
+          { error -> notFound(context, error) },
+          { asset ->
+            val response = asset.toJson()
+            logger.debug("Path ${context.normalizedPath()} responds with\n${response.encodePrettily()}")
+            context.json(response)
+          }
+        )
       }
-      .getOrHandle { notFound(context, it) }
+      .onFailure { error ->
+        val errormessage = "Failed fetching the asset '$symbol"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 
@@ -79,13 +96,27 @@ class GetQuotesHandler(
     val symbol = context.pathParam("symbol")
     logger.debug("asset param: $symbol")
     assetService.getBySymbol(symbol)
-      .flatMap(quoteService::getForAsset)
-      .map { quote ->
-        val response = quote.toJson()
-        logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
-        context.json(response)
+      .flatMap {
+        it.fold(
+          { error -> Future.failedFuture(error) },
+          { asset -> quoteService.getForAsset(asset) }
+        )
       }
-      .getOrHandle { notFound(context, it) }
+      .onSuccess {
+        it.fold(
+          { error -> notFound(context, error) },
+          { quote ->
+            val response = quote.toJson()
+            logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+            context.json(response)
+          }
+        )
+      }
+      .onFailure { error ->
+        val errormessage = "Failed fetching quotes for asset '$symbol"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 
@@ -99,13 +130,25 @@ class GetWatchlistHandler(
     Either
       .catch { UUID.fromString(context.pathParam("accountId")) }
       .mapLeft { "Invalid account ID" }
-      .flatMap(watchlistService::getWatchlist)
-      .map { watchlist ->
-        val response = watchlist.toJson()
-        logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
-        context.json(response)
+      .fold(
+        { error -> Future.failedFuture(error) },
+        { accountId -> watchlistService.getWatchlist(accountId) }
+      )
+      .onSuccess {
+        it.fold(
+          { error -> notFound(context, error) },
+          { watchlist ->
+            val response = watchlist.toJson()
+            logger.debug("Path ${context.normalizedPath()} responds with ${response.encodePrettily()}")
+            context.json(response)
+          }
+        )
       }
-      .getOrHandle { notFound(context, it) }
+      .onFailure { error ->
+        val errormessage = "Failed fetching the watchlist for account '${context.pathParam("accountId")}"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 
@@ -130,13 +173,26 @@ class AddWatchlistHandler(
               .catch { body.mapTo(Watchlist::class.java) }
               .mapLeft { it.message ?: "Invalid JSON" }
           }
-          .flatMap { watchlist ->
-            logger.info("Adding $watchlist for $accountId")
-            watchlistService.addWatchlist(accountId, watchlist)
-          }
+          .map { watchlist -> (accountId to watchlist) }
       }
-      .map { context.response().setStatusCode(201).end() }
-      .getOrHandle { badRequest(context, it) }
+      .fold(
+        { error -> Future.failedFuture(error) },
+        { pair ->
+          logger.info("Adding ${pair.second} for ${pair.first}")
+          watchlistService.addWatchlist(pair.first, pair.second)
+        }
+      )
+      .onSuccess {
+        it.fold(
+          { error -> notFound(context, error) },
+          { context.response().setStatusCode(201).end() }
+        )
+      }
+      .onFailure { error ->
+        val errormessage = "Failed adding a watchlist for account '${context.pathParam("accountId")}"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 
@@ -150,9 +206,18 @@ class DeleteWatchlistHandler(
     Either
       .catch { UUID.fromString(context.pathParam("accountId")) }
       .mapLeft { "Invalid account ID" }
-      .flatMap { accountId -> watchlistService.deleteWatchlist(accountId) }
-      .map { context.response().setStatusCode(200).end() }
-      .getOrHandle { badRequest(context, it) }
+      .fold(
+        { error -> Future.failedFuture(error) },
+        { accountId -> watchlistService.deleteWatchlist(accountId) }
+      )
+      .onSuccess {
+        context.response().setStatusCode(200).end()
+      }
+      .onFailure { error ->
+        val errormessage = "Failed deleting a watchlist for account '${context.pathParam("accountId")}"
+        logger.error(errormessage, error)
+        errorHandler(context, 500, errormessage)
+      }
   }
 }
 

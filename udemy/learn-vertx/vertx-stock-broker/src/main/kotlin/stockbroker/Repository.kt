@@ -3,41 +3,51 @@ package stockbroker
 import arrow.core.Option
 import arrow.core.nonEmptyListOf
 import arrow.core.toOption
+import io.vertx.core.Future
 import io.vertx.pgclient.PgPool
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
 sealed interface Repository {
-  fun getAllAssets(): List<Asset>
-  fun getAssetBySymbol(symbol: String): Option<Asset>
-  fun getQuoteForAsset(asset: Asset): Option<Quote>
-  fun getWatchlist(accountId: UUID): Option<Watchlist>
-  fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist>
-  fun deleteWatchlist(accountId: UUID): Option<Watchlist>
+  fun getAllAssets(): Future<List<Asset>>
+  fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
+  fun getQuoteForAsset(asset: Asset): Future<Option<Quote>>
+  fun getWatchlist(accountId: UUID): Future<Option<Watchlist>>
+  fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>>
+  fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>>
 }
 
-class PgStore(pgPool: PgPool) : Repository {
-  override fun getAllAssets(): List<Asset> {
+class PgStore(private val db: PgPool) : Repository {
+
+  companion object {
+    private val logger: Logger = LoggerFactory.getLogger(PgStore::class.java)
+  }
+
+  override fun getAllAssets(): Future<List<Asset>> =
+    db.query("select a.symbol from broker.assets a")
+      .execute()
+      .map { it.map { row -> Asset(row.getString("symbol")) } }
+      .onFailure { logger.error("Fetching assets failed.", it) }
+
+  override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> {
     TODO("Not yet implemented")
   }
 
-  override fun getAssetBySymbol(symbol: String): Option<Asset> {
+  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> {
     TODO("Not yet implemented")
   }
 
-  override fun getQuoteForAsset(asset: Asset): Option<Quote> {
+  override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> {
     TODO("Not yet implemented")
   }
 
-  override fun getWatchlist(accountId: UUID): Option<Watchlist> {
+  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>> {
     TODO("Not yet implemented")
   }
 
-  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist> {
-    TODO("Not yet implemented")
-  }
-
-  override fun deleteWatchlist(accountId: UUID): Option<Watchlist> {
+  override fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>> {
     TODO("Not yet implemented")
   }
 }
@@ -63,26 +73,21 @@ object MemStore : Repository {
     )
   }
 
-  override fun getAllAssets(): List<Asset> =
-    assets
+  override fun getAllAssets(): Future<List<Asset>> =
+    Future.succeededFuture(assets)
 
-  override fun getAssetBySymbol(symbol: String): Option<Asset> =
-    assets.find { it.symbol == symbol }
-      .toOption()
+  override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> =
+    Future.succeededFuture(assets.find { it.symbol == symbol }.toOption())
 
-  override fun getQuoteForAsset(asset: Asset): Option<Quote> =
-    quotes.find { it.asset == asset }
-      .toOption()
+  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
+    Future.succeededFuture(quotes.find { it.asset == asset }.toOption())
 
-  override fun getWatchlist(accountId: UUID): Option<Watchlist> =
-    watchlists[accountId]
-      .toOption()
+  override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> =
+    Future.succeededFuture(watchlists[accountId].toOption())
 
-  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Option<Watchlist> =
-    watchlists.put(accountId, watchlist)
-      .toOption()
+  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>> =
+    Future.succeededFuture(watchlists.put(accountId, watchlist).toOption())
 
-  override fun deleteWatchlist(accountId: UUID): Option<Watchlist> =
-    watchlists.remove(accountId)
-      .toOption()
+  override fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>> =
+    Future.succeededFuture(watchlists.remove(accountId).toOption())
 }
