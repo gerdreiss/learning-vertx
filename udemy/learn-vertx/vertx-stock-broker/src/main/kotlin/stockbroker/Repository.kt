@@ -34,27 +34,32 @@ class DbStore(private val db: Pool) : Repository {
       .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> =
-    SqlTemplate.forQuery(db, "select * from broker.assets a where a.symbol = #{symbol}")
+    SqlTemplate
+      .forQuery(db, "select * from broker.assets a where a.symbol = #{symbol}")
+      .mapTo(AssetEntity::class.java)
       .execute(mapOf("symbol" to symbol))
-      .map { it.map { row -> Asset(row.getString("symbol")) } }
-      .map { it.firstOrNone() }
+      .map { rows ->
+        rows.firstOrNone()
+          .map { entity ->
+            entity.toAsset()
+          }
+      }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
-    SqlTemplate.forQuery(db, "select * from broker.quotes q where q.asset = #{symbol}")
+    SqlTemplate
+      .forQuery(
+        db,
+        "select q.bid, q.ask, q.last_price, q.volume, q.asset from broker.quotes q where q.asset = #{symbol}"
+      )
+      .mapTo(QuoteEntity::class.java)
       .execute(mapOf("symbol" to asset.symbol))
-      .map {
-        it.map { row ->
-          Quote(
-            bid = row.getBigDecimal("bid"),
-            ask = row.getBigDecimal("ask"),
-            lastPrice = row.getBigDecimal("last_price"),
-            volume = row.getBigDecimal("volume"),
-            asset = Asset(row.getString("asset"))
-          )
-        }
+      .map { rows ->
+        rows.firstOrNone()
+          .map { entity ->
+            entity.toQuote()
+          }
       }
-      .map { it.firstOrNone() }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
   override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> {
