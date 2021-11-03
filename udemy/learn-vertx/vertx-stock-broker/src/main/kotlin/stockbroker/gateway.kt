@@ -83,7 +83,9 @@ class DbGateway(private val db: Pool) : Gateway {
 }
 
 object MemGateway : Gateway {
+
   private val watchlists = mutableMapOf<String, Watchlist>()
+
   private val assets = mutableListOf(
     Asset("AAPL"),
     Asset("AMZN"),
@@ -93,6 +95,7 @@ object MemGateway : Gateway {
     Asset("NFLX"),
     Asset("TSLA")
   )
+
   private val quotes = assets.map { asset ->
     Quote(
       asset,
