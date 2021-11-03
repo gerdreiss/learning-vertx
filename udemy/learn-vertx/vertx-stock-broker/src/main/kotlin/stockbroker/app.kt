@@ -4,7 +4,7 @@ import io.vertx.core.Vertx
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-private val logger: Logger = LoggerFactory.getLogger("main")
+private val logger: Logger = LoggerFactory.getLogger("stockbroker.main")
 
 fun main() {
   Vertx.vertx()

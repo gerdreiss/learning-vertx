@@ -9,7 +9,7 @@
       <env name="DATABASE_USER" value="postgres" />
       <env name="DATABASE_PASSWORD" value="secret" />
     </envs>
-    <option name="MAIN_CLASS_NAME" value="stockbroker.MainKt" />
+    <option name="MAIN_CLASS_NAME" value="stockbroker.AppKt" />
     <module name="vertx-stock-broker" />
     <shortenClasspath name="NONE" />
     <method v="2">
