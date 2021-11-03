@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="MainKt" type="JetRunConfigurationType" nameIsGenerated="true">
+  <configuration default="false" name="AppKt" type="JetRunConfigurationType" nameIsGenerated="true">
     <envs>
       <env name="SERVER_PORT" value="9001" />
       <env name="SERVER_HOST" value="0.0.0.0" />
