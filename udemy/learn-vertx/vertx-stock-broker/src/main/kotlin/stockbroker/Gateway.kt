@@ -11,23 +11,23 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
-sealed interface Store {
-  fun saveAsset(asset: Asset): Future<Boolean>
+sealed interface Gateway {
+  fun addAsset(asset: Asset): Future<Boolean>
   fun getAllAssets(): Future<List<Asset>>
   fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
-  fun getQuoteForAsset(asset: Asset): Future<Option<Quote>>
+  fun getQuotesForAsset(asset: Asset): Future<Option<Quotes>>
   fun getWatchlist(accountId: String): Future<Watchlist>
   fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>>
   fun deleteWatchlist(accountId: String): Future<Boolean>
 }
 
-class DbStore(private val db: Pool) : Store {
+class DbGateway(private val db: Pool) : Gateway {
 
   companion object {
-    private val logger: Logger = LoggerFactory.getLogger(DbStore::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(DbGateway::class.java)
   }
 
-  override fun saveAsset(asset: Asset): Future<Boolean> =
+  override fun addAsset(asset: Asset): Future<Boolean> =
     SqlTemplate
       .forUpdate(db, "insert into broker.assets values (#{symbol})")
       .execute(mapOf("symbol" to asset.symbol))
@@ -48,7 +48,7 @@ class DbStore(private val db: Pool) : Store {
       .map { it.firstOrNone().map { entity -> entity.toAsset() } }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
-  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
+  override fun getQuotesForAsset(asset: Asset): Future<Option<Quotes>> =
     SqlTemplate
       .forQuery(
         db,
@@ -82,7 +82,7 @@ class DbStore(private val db: Pool) : Store {
       .onFailure { logger.error("Deleting watchlists for account ID '$accountId' failed.", it) }
 }
 
-object MemStore : Store {
+object MemGateway : Gateway {
 
   private val watchlists = mutableMapOf<String, Watchlist>()
 
@@ -97,7 +97,7 @@ object MemStore : Store {
   )
 
   private val quotes = assets.map { asset ->
-    Quote(
+    Quotes(
       asset,
       ThreadLocalRandom.current().nextDouble(1.0, 100.0).toBigDecimal(),
       ThreadLocalRandom.current().nextDouble(1.0, 100.0).toBigDecimal(),
@@ -106,7 +106,7 @@ object MemStore : Store {
     )
   }
 
-  override fun saveAsset(asset: Asset): Future<Boolean> =
+  override fun addAsset(asset: Asset): Future<Boolean> =
     Future.succeededFuture(assets.add(asset))
 
   override fun getAllAssets(): Future<List<Asset>> =
@@ -115,7 +115,7 @@ object MemStore : Store {
   override fun getAssetBySymbol(symbol: String): Future<Option<Asset>> =
     Future.succeededFuture(assets.find { it.symbol == symbol }.toOption())
 
-  override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
+  override fun getQuotesForAsset(asset: Asset): Future<Option<Quotes>> =
     Future.succeededFuture(quotes.find { it.asset == asset }.toOption())
 
   override fun getWatchlist(accountId: String): Future<Watchlist> =

@@ -8,49 +8,49 @@ import java.util.*
 
 class Services(
   val assetService: AssetService,
-  val quoteService: QuoteService,
+  val quoteService: QuotesService,
   val watchlistService: WatchlistService
 ) {
   companion object {
     fun create(vertx: Vertx, brokerConfig: BrokerConfig): Services {
-      val persistentStore = DbStore(brokerConfig.dbConnectionPool(vertx))
+      val persistentStore = DbGateway(brokerConfig.dbConnectionPool(vertx))
       val assetService = AssetService(persistentStore)
-      val quoteService = QuoteService(persistentStore)
+      val quoteService = QuotesService(persistentStore)
       val watchlistService = WatchlistService(persistentStore)
       return Services(assetService, quoteService, watchlistService)
     }
   }
 }
 
-class AssetService(private val store: Store) {
-  fun getAll(): Future<List<Asset>> =
+class AssetService(private val store: Gateway) {
+  fun getAllAssets(): Future<List<Asset>> =
     store.getAllAssets()
 
-  fun getBySymbol(symbol: String): Future<Either<String, Asset>> =
+  fun getAssetBySymbol(symbol: String): Future<Either<String, Asset>> =
     store.getAssetBySymbol(symbol)
       .map { it.toEither { "Asset '$symbol' not found" } }
 
   fun addAsset(asset: Asset): Future<Either<String, Asset>> =
-    store.saveAsset(asset)
+    store.addAsset(asset)
       .map { Either.Right(asset) }
 }
 
-class QuoteService(private val store: Store) {
-  fun getForAsset(asset: Asset): Future<Either<String, Quote>> =
-    store.getQuoteForAsset(asset)
+class QuotesService(private val store: Gateway) {
+  fun getQuotesForAsset(asset: Asset): Future<Either<String, Quotes>> =
+    store.getQuotesForAsset(asset)
       .map { it.toEither { "Quotes for asset '${asset.symbol}' not found" } }
 }
 
-class WatchlistService(private val store: Store) {
+class WatchlistService(private val gateway: Gateway) {
   fun getWatchlist(accountId: UUID): Future<Either<String, Watchlist>> =
-    store.getWatchlist(accountId.toString())
+    gateway.getWatchlist(accountId.toString())
       .map { Either.Right(it) }
 
   fun addWatchlist(accountId: UUID, watchlist: Watchlist): Future<Either<String, Option<Watchlist>>> =
-    store.postWatchlist(accountId.toString(), watchlist)
+    gateway.postWatchlist(accountId.toString(), watchlist)
       .map { Either.Right(it) }
 
   fun deleteWatchlist(accountId: UUID): Future<Either<String, Boolean>> =
-    store.deleteWatchlist(accountId.toString())
+    gateway.deleteWatchlist(accountId.toString())
       .map { Either.Right(it) }
 }

@@ -8,7 +8,7 @@ data class Asset(val symbol: String) {
   fun toJson(): JsonObject = JsonObject.mapFrom(this)
 }
 
-data class Quote(
+data class Quotes(
   val asset: Asset,
   val bid: BigDecimal,
   val ask: BigDecimal,

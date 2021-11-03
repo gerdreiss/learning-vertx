@@ -31,7 +31,10 @@ class MainVerticle : AbstractVerticle() {
           }
           .flatMap {
             logger.info("Deploying verticles...")
-            val deploymentOptions = deploymentOptionsOf(instances = processors(), config = config)
+            val deploymentOptions = deploymentOptionsOf(
+              config = config,
+              instances = max(1, Runtime.getRuntime().availableProcessors())
+            )
             vertx
               .deployVerticle(RestApiVerticle::class.java, deploymentOptions)
               .onSuccess {
@@ -42,10 +45,6 @@ class MainVerticle : AbstractVerticle() {
       .onSuccess { startPromise.complete() }
       .onFailure(startPromise::fail)
   }
-
-  private fun processors(): Int =
-    // to ensure that there is no problem in virtualized containers
-    max(1, Runtime.getRuntime().availableProcessors())
 }
 
 class RestApiVerticle : AbstractVerticle() {

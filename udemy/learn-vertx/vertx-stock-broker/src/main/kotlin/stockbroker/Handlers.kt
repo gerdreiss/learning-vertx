@@ -42,7 +42,7 @@ class GetAssetsHandler(
     get() = LoggerFactory.getLogger(GetAssetsHandler::class.java)
 
   override fun handle(context: RoutingContext) {
-    assetService.getAll()
+    assetService.getAllAssets()
       .onSuccess { assets ->
         val response = assets
           .fold(JsonArray()) { jsonArray, asset ->
@@ -106,7 +106,7 @@ class GetAssetHandler(
 
   override fun handle(context: RoutingContext) {
     val symbol = context.pathParam("symbol")
-    assetService.getBySymbol(symbol)
+    assetService.getAssetBySymbol(symbol)
       .onSuccess { result ->
         result.fold(
           { error -> notFound(context, error) },
@@ -127,7 +127,7 @@ class GetAssetHandler(
 
 class GetQuotesHandler(
   private val assetService: AssetService,
-  private val quoteService: QuoteService
+  private val quotesService: QuotesService
 ) : AbstractHandler() {
   override val logger: Logger
     get() = LoggerFactory.getLogger(GetQuotesHandler::class.java)
@@ -135,11 +135,11 @@ class GetQuotesHandler(
   override fun handle(context: RoutingContext) {
     val symbol = context.pathParam("symbol")
     logger.debug("asset param: $symbol")
-    assetService.getBySymbol(symbol)
+    assetService.getAssetBySymbol(symbol)
       .flatMap { result ->
         result.fold(
           { error -> Future.failedFuture(error) },
-          { asset -> quoteService.getForAsset(asset) }
+          { asset -> quotesService.getQuotesForAsset(asset) }
         )
       }
       .onSuccess {

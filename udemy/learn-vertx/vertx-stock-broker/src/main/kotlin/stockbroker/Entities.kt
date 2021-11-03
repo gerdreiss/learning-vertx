@@ -24,5 +24,5 @@ data class QuoteEntity(
 ) {
   constructor() : this(ZERO, ZERO, ZERO, ZERO, "")
 
-  fun toQuote(): Quote = Quote(Asset(asset), bid, ask, lastPrice, volume)
+  fun toQuote(): Quotes = Quotes(Asset(asset), bid, ask, lastPrice, volume)
 }
