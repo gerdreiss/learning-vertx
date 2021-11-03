@@ -11,7 +11,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
-sealed interface Gateway {
+sealed interface Store {
   fun saveAsset(asset: Asset): Future<Boolean>
   fun getAllAssets(): Future<List<Asset>>
   fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
@@ -21,10 +21,10 @@ sealed interface Gateway {
   fun deleteWatchlist(accountId: String): Future<Boolean>
 }
 
-class DbGateway(private val db: Pool) : Gateway {
+class DbStore(private val db: Pool) : Store {
 
   companion object {
-    private val logger: Logger = LoggerFactory.getLogger(DbGateway::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(DbStore::class.java)
   }
 
   override fun saveAsset(asset: Asset): Future<Boolean> =
@@ -82,7 +82,7 @@ class DbGateway(private val db: Pool) : Gateway {
       .onFailure { logger.error("Deleting watchlists for account ID '$accountId' failed.", it) }
 }
 
-object MemGateway : Gateway {
+object MemStore : Store {
 
   private val watchlists = mutableMapOf<String, Watchlist>()
 
