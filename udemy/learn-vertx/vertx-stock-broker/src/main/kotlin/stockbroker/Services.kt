@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.Option
 import io.vertx.core.Future
 import io.vertx.core.Vertx
-import java.util.UUID
+import java.util.*
 
 class Services(
   val assetService: AssetService,
@@ -39,14 +39,14 @@ class QuoteService(private val store: Repository) {
 
 class WatchlistService(private val store: Repository) {
   fun getWatchlist(accountId: UUID): Future<Either<String, Watchlist>> =
-    store.getWatchlist(accountId)
-      .map { it.toEither { "Watch list for account $accountId not found" } }
-
-  fun addWatchlist(accountId: UUID, watchlist: Watchlist): Future<Either<String, Option<Watchlist>>> =
-    store.putWatchlist(accountId, watchlist)
+    store.getWatchlist(accountId.toString())
       .map { Either.Right(it) }
 
-  fun deleteWatchlist(accountId: UUID): Future<Either<String, Option<Watchlist>>> =
-    store.deleteWatchlist(accountId)
+  fun addWatchlist(accountId: UUID, watchlist: Watchlist): Future<Either<String, Option<Watchlist>>> =
+    store.postWatchlist(accountId.toString(), watchlist)
+      .map { Either.Right(it) }
+
+  fun deleteWatchlist(accountId: UUID): Future<Either<String, Boolean>> =
+    store.deleteWatchlist(accountId.toString())
       .map { Either.Right(it) }
 }

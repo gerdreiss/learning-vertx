@@ -3,22 +3,22 @@ package stockbroker
 import arrow.core.Option
 import arrow.core.firstOrNone
 import arrow.core.nonEmptyListOf
+import arrow.core.some
 import arrow.core.toOption
 import io.vertx.core.Future
 import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.templates.SqlTemplate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 
 sealed interface Repository {
   fun getAllAssets(): Future<List<Asset>>
   fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
   fun getQuoteForAsset(asset: Asset): Future<Option<Quote>>
-  fun getWatchlist(accountId: UUID): Future<Option<Watchlist>>
-  fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>>
-  fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>>
+  fun getWatchlist(accountId: String): Future<Watchlist>
+  fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>>
+  fun deleteWatchlist(accountId: String): Future<Boolean>
 }
 
 class DbStore(private val db: Pool) : Repository {
@@ -52,21 +52,31 @@ class DbStore(private val db: Pool) : Repository {
       .map { it.firstOrNone().map { entity -> entity.toQuote() } }
       .onFailure { logger.error("Fetching assets failed.", it) }
 
-  override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> {
-    TODO("Not yet implemented")
-  }
+  override fun getWatchlist(accountId: String): Future<Watchlist> =
+    SqlTemplate
+      .forQuery(db, "select w.asset from broker.watchlists w where w.account_id = #{accountId}")
+      .execute(mapOf("accountId" to accountId))
+      .map { it.map { row -> Asset(row.getString("asset")) } }
+      .map { Watchlist(it) }
+      .onFailure { logger.error("Fetching watchlists for account ID '$accountId' failed.", it) }
 
-  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>> {
-    TODO("Not yet implemented")
-  }
+  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>> =
+    SqlTemplate
+      .forUpdate(db, "insert into broker.watchlists values (#{accountId}, #{asset})")
+      .executeBatch(watchlist.assets.map { asset -> mapOf("accountId" to accountId, "asset" to asset.symbol) })
+      .map { watchlist.some() }
+      .onFailure { logger.error("Inserting watchlists for account ID '$accountId' failed.", it) }
 
-  override fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>> {
-    TODO("Not yet implemented")
-  }
+  override fun deleteWatchlist(accountId: String): Future<Boolean> =
+    SqlTemplate
+      .forUpdate(db, "delete from broker.watchlists w where w.account_id = #{accountId}")
+      .execute(mapOf("accountId" to accountId))
+      .map(true)
+      .onFailure { logger.error("Deleting watchlists for account ID '$accountId' failed.", it) }
 }
 
 object MemStore : Repository {
-  private val watchlists = mutableMapOf<UUID, Watchlist>()
+  private val watchlists = mutableMapOf<String, Watchlist>()
   private val assets = nonEmptyListOf(
     Asset("AAPL"),
     Asset("AMZN"),
@@ -95,12 +105,12 @@ object MemStore : Repository {
   override fun getQuoteForAsset(asset: Asset): Future<Option<Quote>> =
     Future.succeededFuture(quotes.find { it.asset == asset }.toOption())
 
-  override fun getWatchlist(accountId: UUID): Future<Option<Watchlist>> =
-    Future.succeededFuture(watchlists[accountId].toOption())
+  override fun getWatchlist(accountId: String): Future<Watchlist> =
+    Future.succeededFuture(watchlists[accountId] ?: Watchlist(listOf()))
 
-  override fun putWatchlist(accountId: UUID, watchlist: Watchlist): Future<Option<Watchlist>> =
+  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>> =
     Future.succeededFuture(watchlists.put(accountId, watchlist).toOption())
 
-  override fun deleteWatchlist(accountId: UUID): Future<Option<Watchlist>> =
-    Future.succeededFuture(watchlists.remove(accountId).toOption())
+  override fun deleteWatchlist(accountId: String): Future<Boolean> =
+    Future.succeededFuture(watchlists.remove(accountId) != null)
 }

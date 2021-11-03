@@ -1,0 +1,16 @@
+POST http://localhost:9001/accounts/eb35a6b2-0f4f-4ba1-aa18-927144d9bc24/watchlist
+Content-Type: application/json
+
+{
+  "assets": [
+    {
+      "symbol": "AMZN"
+    },
+    {
+      "symbol": "FB"
+    },
+    {
+      "symbol": "TSLA"
+    }
+  ]
+}
