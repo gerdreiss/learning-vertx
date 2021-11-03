@@ -6,6 +6,7 @@ import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.json.JsonArray
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.HttpException
 import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import org.slf4j.Logger
@@ -54,6 +55,45 @@ class GetAssetsHandler(
         val errormessage = "Failed fetching assets"
         logger.error(errormessage, error)
         errorHandler(context, 500, errormessage)
+      }
+  }
+}
+
+class PostAssetHandler(
+  private val assetService: AssetService
+) : AbstractHandler() {
+  override val logger: Logger
+    get() = LoggerFactory.getLogger(PostAssetHandler::class.java)
+
+  override fun handle(context: RoutingContext) {
+    Either
+      .fromNullable(context.bodyAsJson)
+      .mapLeft { 400 to "Request body not found" }
+      .flatMap { body ->
+        logger.debug("Asset body: $body")
+        Either
+          .catch { body.mapTo(Asset::class.java) }
+          .mapLeft { 400 to (it.message ?: "Invalid JSON") }
+      }
+      .fold(
+        { error -> Future.failedFuture(HttpException(error.first, error.second)) },
+        { asset ->
+          logger.info("Adding asset $asset")
+          assetService.addAsset(asset)
+            .map { it.mapLeft { error -> 500 to error } }
+        }
+      )
+      .onSuccess {
+        it.fold(
+          { error -> errorHandler(context, error.first, error.second) },
+          { context.response().setStatusCode(201).end() }
+        )
+      }
+      .onFailure { error ->
+        val errormessage = "Failed to add the asset."
+        logger.error(errormessage, error)
+        if (error is HttpException) errorHandler(context, error.statusCode, error.payload)
+        else errorHandler(context, 500, errormessage)
       }
   }
 }
@@ -161,37 +201,39 @@ class AddWatchlistHandler(
   override fun handle(context: RoutingContext) {
     Either
       .catch { UUID.fromString(context.pathParam("accountId")) }
-      .mapLeft { "Invalid account ID" }
+      .mapLeft { 400 to "Invalid account ID" }
       .flatMap { accountId ->
         logger.debug("Watchlist for $accountId")
         Either
           .fromNullable(context.bodyAsJson)
-          .mapLeft { "Request body not found" }
+          .mapLeft { 400 to "Request body not found" }
           .flatMap { body ->
             logger.debug("Watchlist body: $body")
             Either
               .catch { body.mapTo(Watchlist::class.java) }
-              .mapLeft { it.message ?: "Invalid JSON" }
+              .mapLeft { 400 to (it.message ?: "Invalid JSON") }
           }
           .map { watchlist -> (accountId to watchlist) }
       }
       .fold(
-        { error -> Future.failedFuture(error) },
-        { pair ->
-          logger.info("Adding ${pair.second} for ${pair.first}")
-          watchlistService.addWatchlist(pair.first, pair.second)
+        { error -> Future.failedFuture(HttpException(error.first, error.second)) },
+        { accountIdAndWatchlist ->
+          logger.info("Adding ${accountIdAndWatchlist.second} for ${accountIdAndWatchlist.first}")
+          watchlistService.addWatchlist(accountIdAndWatchlist.first, accountIdAndWatchlist.second)
+            .map { it.mapLeft { error -> 500 to error } }
         }
       )
       .onSuccess {
         it.fold(
-          { error -> notFound(context, error) },
+          { error -> errorHandler(context, error.first, error.second) },
           { context.response().setStatusCode(201).end() }
         )
       }
       .onFailure { error ->
         val errormessage = "Failed adding a watchlist for account '${context.pathParam("accountId")}"
         logger.error(errormessage, error)
-        errorHandler(context, 500, errormessage)
+        if (error is HttpException) errorHandler(context, error.statusCode, error.payload)
+        else errorHandler(context, 500, errormessage)
       }
   }
 }

@@ -19,9 +19,9 @@ class RestApiVerticle : AbstractVerticle() {
           startPromise.fail(result.cause())
         } else {
 
-          val brokerConfig = BrokerConfig.fromConfig(result.result())
+          val brokerConfig = BrokerConfig.fromJson(result.result())
           val services = Services.create(vertx, brokerConfig)
-          val routes = Routes.routes(vertx, services)
+          val routes = Routes.create(vertx, services)
 
           vertx
             .createHttpServer()

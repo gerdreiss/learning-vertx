@@ -6,7 +6,7 @@ import io.vertx.ext.web.handler.BodyHandler
 
 object Routes {
 
-  fun routes(vertx: Vertx, services: Services): Router {
+  fun create(vertx: Vertx, services: Services): Router {
 
     val parent = Router.router(vertx)
 

@@ -65,10 +65,10 @@ class BrokerConfig(
   private val dbConfig: DbConfig
 ) {
   companion object {
-    fun fromConfig(config: JsonObject) =
+    fun fromJson(json: JsonObject) =
       BrokerConfig(
-        ServerConfig.fromConfig(config),
-        DbConfig.fromConfig(config)
+        ServerConfig.fromJson(json),
+        DbConfig.fromJson(json)
       )
   }
 
@@ -99,13 +99,13 @@ class DbConfig(
   val dbPass: String
 ) {
   companion object {
-    fun fromConfig(config: JsonObject) =
+    fun fromJson(json: JsonObject) =
       DbConfig(
-        dbHost = config.getString(ConfigLoader.DATABASE_HOST),
-        dbPort = config.getInteger(ConfigLoader.DATABASE_PORT),
-        dbName = config.getString(ConfigLoader.DATABASE_NAME),
-        dbUser = config.getString(ConfigLoader.DATABASE_USER),
-        dbPass = config.getString(ConfigLoader.DATABASE_PASSWORD),
+        dbHost = json.getString(ConfigLoader.DATABASE_HOST),
+        dbPort = json.getInteger(ConfigLoader.DATABASE_PORT),
+        dbName = json.getString(ConfigLoader.DATABASE_NAME),
+        dbUser = json.getString(ConfigLoader.DATABASE_USER),
+        dbPass = json.getString(ConfigLoader.DATABASE_PASSWORD),
       )
   }
 }
@@ -115,10 +115,10 @@ class ServerConfig(
   val port: Int
 ) {
   companion object {
-    fun fromConfig(config: JsonObject) =
+    fun fromJson(json: JsonObject) =
       ServerConfig(
-        host = config.getString(ConfigLoader.SERVER_HOST),
-        port = config.getInteger(ConfigLoader.SERVER_PORT)
+        host = json.getString(ConfigLoader.SERVER_HOST),
+        port = json.getInteger(ConfigLoader.SERVER_PORT)
       )
   }
 }
