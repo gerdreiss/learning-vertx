@@ -29,6 +29,7 @@ object Routes {
     val watchlistPath = "$accountByIdPath/watchlist"
 
     parent.get(assetsPath).handler(GetAssetsHandler(services.assetService))
+    parent.post(assetsPath).handler(PostAssetHandler(services.assetService))
     parent.get(assetBySymbolPath).handler(GetAssetHandler(services.assetService))
     parent.get(quotesPath).handler(GetQuotesHandler(services.assetService, services.quoteService))
     parent.get(watchlistPath).handler(GetWatchlistHandler(services.watchlistService))

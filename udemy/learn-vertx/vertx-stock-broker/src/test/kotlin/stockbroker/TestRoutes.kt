@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import java.util.UUID
-import java.util.concurrent.ThreadLocalRandom
+import java.util.*
 
 @ExtendWith(VertxExtension::class)
 class TestRoutes {
@@ -85,7 +84,7 @@ class TestRoutes {
   fun test_post_invalid_accountId(vertx: Vertx, testContext: VertxTestContext) {
     WebClient
       .create(vertx, WebClientOptions().setDefaultPort(System.getProperty("SERVER_PORT").toInt()))
-      .post("/accounts/${ThreadLocalRandom.current().nextInt()}/watchlist")
+      .post("/accounts/${UUID.randomUUID()}/watchlist")
       .send()
       .onComplete(
         testContext.succeeding { response ->
@@ -111,13 +110,18 @@ class TestRoutes {
 
   @Test
   fun test_post_get_and_delete(vertx: Vertx, testContext: VertxTestContext) {
-    val webClient = WebClient.create(vertx, WebClientOptions().setDefaultPort(System.getProperty("SERVER_PORT").toInt()))
-    val url = "/accounts/${UUID.randomUUID()}/watchlist"
-    val watchlist = Watchlist(listOf(Asset("APPL"), Asset("FP"))).toJson()
+    val webClient =
+      WebClient.create(vertx, WebClientOptions().setDefaultPort(System.getProperty("SERVER_PORT").toInt()))
+
+    val watchlistUrl = "/accounts/${UUID.randomUUID()}/watchlist"
+
+    val aapl = Asset("AAPL")
+    val fb = Asset("FB")
+    val watchlist = Watchlist(listOf(aapl, fb))
 
     webClient
-      .post(url)
-      .sendJsonObject(watchlist)
+      .post(watchlistUrl)
+      .sendJsonObject(watchlist.toJson())
       .onComplete(
         testContext.succeeding { response ->
           assertEquals(201, response.statusCode())
@@ -125,18 +129,18 @@ class TestRoutes {
       )
       .flatMap {
         webClient
-          .get(url)
+          .get(watchlistUrl)
           .send()
           .onComplete(
             testContext.succeeding { response ->
               assertEquals(200, response.statusCode())
-              assertEquals(watchlist, response.bodyAsJsonObject())
+              assertEquals(watchlist.toJson(), response.bodyAsJsonObject())
             }
           )
       }
       .flatMap {
         webClient
-          .delete(url)
+          .delete(watchlistUrl)
           .send()
           .onComplete(
             testContext.succeeding { response ->

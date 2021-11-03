@@ -2,7 +2,6 @@ package stockbroker
 
 import arrow.core.Option
 import arrow.core.firstOrNone
-import arrow.core.nonEmptyListOf
 import arrow.core.some
 import arrow.core.toOption
 import io.vertx.core.Future
@@ -12,7 +11,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ThreadLocalRandom
 
-sealed interface Repository {
+sealed interface Gateway {
+  fun saveAsset(asset: Asset): Future<Boolean>
   fun getAllAssets(): Future<List<Asset>>
   fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
   fun getQuoteForAsset(asset: Asset): Future<Option<Quote>>
@@ -21,11 +21,18 @@ sealed interface Repository {
   fun deleteWatchlist(accountId: String): Future<Boolean>
 }
 
-class DbStore(private val db: Pool) : Repository {
+class DbGateway(private val db: Pool) : Gateway {
 
   companion object {
-    private val logger: Logger = LoggerFactory.getLogger(DbStore::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(DbGateway::class.java)
   }
+
+  override fun saveAsset(asset: Asset): Future<Boolean> =
+    SqlTemplate
+      .forUpdate(db, "insert into broker.assets values (#{symbol})")
+      .execute(mapOf("symbol" to asset.symbol))
+      .map { true }
+      .onFailure { logger.error("Inserting asset failed.", it) }
 
   override fun getAllAssets(): Future<List<Asset>> =
     db.query("select a.symbol from broker.assets a")
@@ -75,9 +82,9 @@ class DbStore(private val db: Pool) : Repository {
       .onFailure { logger.error("Deleting watchlists for account ID '$accountId' failed.", it) }
 }
 
-object MemStore : Repository {
+object MemGateway : Gateway {
   private val watchlists = mutableMapOf<String, Watchlist>()
-  private val assets = nonEmptyListOf(
+  private val assets = mutableListOf(
     Asset("AAPL"),
     Asset("AMZN"),
     Asset("FB"),
@@ -95,6 +102,9 @@ object MemStore : Repository {
       ThreadLocalRandom.current().nextDouble(1.0, 100.0).toBigDecimal(),
     )
   }
+
+  override fun saveAsset(asset: Asset): Future<Boolean> =
+    Future.succeededFuture(assets.add(asset))
 
   override fun getAllAssets(): Future<List<Asset>> =
     Future.succeededFuture(assets)

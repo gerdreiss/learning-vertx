@@ -18,8 +18,8 @@ class MainVerticle : AbstractVerticle() {
       .flatMap { config ->
         logger.debug("Config loaded: {}", config)
         vertx
-          .executeBlocking<DbConfig> {
-            it.complete(DbConfig.fromConfig(config))
+          .executeBlocking<DbConfig> { promise ->
+            promise.complete(DbConfig.fromConfig(config))
           }
           .flatMap { dbConfig ->
             logger.info("Start DB migration...")

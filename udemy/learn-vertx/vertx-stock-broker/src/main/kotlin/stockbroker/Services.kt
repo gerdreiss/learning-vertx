@@ -13,7 +13,7 @@ class Services(
 ) {
   companion object {
     fun create(vertx: Vertx, brokerConfig: BrokerConfig): Services {
-      val persistentStore = DbStore(brokerConfig.dbConnectionPool(vertx))
+      val persistentStore = DbGateway(brokerConfig.dbConnectionPool(vertx))
       val assetService = AssetService(persistentStore)
       val quoteService = QuoteService(persistentStore)
       val watchlistService = WatchlistService(persistentStore)
@@ -22,22 +22,26 @@ class Services(
   }
 }
 
-class AssetService(private val store: Repository) {
+class AssetService(private val store: Gateway) {
   fun getAll(): Future<List<Asset>> =
     store.getAllAssets()
 
   fun getBySymbol(symbol: String): Future<Either<String, Asset>> =
     store.getAssetBySymbol(symbol)
       .map { it.toEither { "Asset '$symbol' not found" } }
+
+  fun addAsset(asset: Asset): Future<Either<String, Asset>> =
+    store.saveAsset(asset)
+      .map { Either.Right(asset) }
 }
 
-class QuoteService(private val store: Repository) {
+class QuoteService(private val store: Gateway) {
   fun getForAsset(asset: Asset): Future<Either<String, Quote>> =
     store.getQuoteForAsset(asset)
       .map { it.toEither { "Quotes for asset '${asset.symbol}' not found" } }
 }
 
-class WatchlistService(private val store: Repository) {
+class WatchlistService(private val store: Gateway) {
   fun getWatchlist(accountId: UUID): Future<Either<String, Watchlist>> =
     store.getWatchlist(accountId.toString())
       .map { Either.Right(it) }

@@ -1,4 +1,7 @@
-POST http://localhost:9001/accounts/eb35a6b2-0f4f-4ba1-aa18-927144d9bc24/watchlist
+DELETE http://localhost:9001/accounts/097fbe08-e8cb-4a40-ac47-4099e95bd505/watchlist
+
+###
+POST http://localhost:9001/accounts/097fbe08-e8cb-4a40-ac47-4099e95bd505/watchlist
 Content-Type: application/json
 
 {
@@ -7,10 +10,11 @@ Content-Type: application/json
       "symbol": "AMZN"
     },
     {
-      "symbol": "FB"
+      "symbol": "GOOG"
     },
     {
       "symbol": "TSLA"
     }
   ]
 }
+
