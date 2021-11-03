@@ -37,9 +37,9 @@ class MainVerticle : AbstractVerticle() {
                 logger.info("Deployed {} with id {}..", RestApiVerticle::class.java.simpleName, it)
               }
           }
-          .onSuccess { startPromise.complete() }
-          .onFailure(startPromise::fail)
       }
+      .onSuccess { startPromise.complete() }
+      .onFailure(startPromise::fail)
   }
 
   private fun processors(): Int =
