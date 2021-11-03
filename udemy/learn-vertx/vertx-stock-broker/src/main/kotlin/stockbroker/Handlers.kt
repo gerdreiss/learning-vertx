@@ -11,7 +11,7 @@ import io.vertx.kotlin.core.json.json
 import io.vertx.kotlin.core.json.obj
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.UUID
+import java.util.*
 
 abstract class AbstractHandler : Handler<RoutingContext> {
 
@@ -43,8 +43,8 @@ class GetAssetsHandler(
 
   override fun handle(context: RoutingContext) {
     assetService.getAll()
-      .onSuccess {
-        val response = it
+      .onSuccess { assets ->
+        val response = assets
           .fold(JsonArray()) { jsonArray, asset ->
             jsonArray.add(asset.toJson())
           }
@@ -83,8 +83,8 @@ class PostAssetHandler(
             .map { it.mapLeft { error -> 500 to error } }
         }
       )
-      .onSuccess {
-        it.fold(
+      .onSuccess { result ->
+        result.fold(
           { error -> errorHandler(context, error.first, error.second) },
           { context.response().setStatusCode(201).end() }
         )
@@ -107,8 +107,8 @@ class GetAssetHandler(
   override fun handle(context: RoutingContext) {
     val symbol = context.pathParam("symbol")
     assetService.getBySymbol(symbol)
-      .onSuccess {
-        it.fold(
+      .onSuccess { result ->
+        result.fold(
           { error -> notFound(context, error) },
           { asset ->
             val response = asset.toJson()
@@ -136,8 +136,8 @@ class GetQuotesHandler(
     val symbol = context.pathParam("symbol")
     logger.debug("asset param: $symbol")
     assetService.getBySymbol(symbol)
-      .flatMap {
-        it.fold(
+      .flatMap { result ->
+        result.fold(
           { error -> Future.failedFuture(error) },
           { asset -> quoteService.getForAsset(asset) }
         )
@@ -174,8 +174,8 @@ class GetWatchlistHandler(
         { error -> Future.failedFuture(error) },
         { accountId -> watchlistService.getWatchlist(accountId) }
       )
-      .onSuccess {
-        it.fold(
+      .onSuccess { result ->
+        result.fold(
           { error -> notFound(context, error) },
           { watchlist ->
             val response = watchlist.toJson()
@@ -223,8 +223,8 @@ class AddWatchlistHandler(
             .map { it.mapLeft { error -> 500 to error } }
         }
       )
-      .onSuccess {
-        it.fold(
+      .onSuccess { result ->
+        result.fold(
           { error -> errorHandler(context, error.first, error.second) },
           { context.response().setStatusCode(201).end() }
         )
@@ -252,8 +252,11 @@ class DeleteWatchlistHandler(
         { error -> Future.failedFuture(error) },
         { accountId -> watchlistService.deleteWatchlist(accountId) }
       )
-      .onSuccess {
-        context.response().setStatusCode(200).end()
+      .onSuccess { result ->
+        result.fold(
+          { error -> errorHandler(context, 500, error) },
+          { context.response().setStatusCode(200).end() }
+        )
       }
       .onFailure { error ->
         val errormessage = "Failed deleting a watchlist for account '${context.pathParam("accountId")}"
@@ -273,9 +276,7 @@ class FailureHandler : AbstractHandler() {
     } else {
       val failure = errorContext.failure()
       logger.error("Route error occurred", failure)
-      val response = json {
-        obj("message" to (failure.message ?: "Unknown error occurred"))
-      }
+      val response = json { obj("message" to (failure.message ?: "Unknown error occurred")) }
       errorContext.response()
         .setStatusCode(errorContext.statusCode())
         .end(response.toBuffer())
