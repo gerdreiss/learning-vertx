@@ -2,7 +2,6 @@ package stockbroker
 
 import arrow.core.Option
 import arrow.core.firstOrNone
-import arrow.core.some
 import arrow.core.toOption
 import io.vertx.core.Future
 import io.vertx.sqlclient.Pool
@@ -17,7 +16,7 @@ sealed interface Gateway {
   fun getAssetBySymbol(symbol: String): Future<Option<Asset>>
   fun getQuotesForAsset(asset: Asset): Future<Option<Quotes>>
   fun getWatchlist(accountId: String): Future<Watchlist>
-  fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>>
+  fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Watchlist>
   fun deleteWatchlist(accountId: String): Future<Boolean>
 }
 
@@ -67,11 +66,11 @@ class DbGateway(private val db: Pool) : Gateway {
       .map { Watchlist(it) }
       .onFailure { logger.error("Fetching watchlists for account ID '$accountId' failed.", it) }
 
-  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>> =
+  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Watchlist> =
     SqlTemplate
       .forUpdate(db, "insert into broker.watchlists values (#{accountId}, #{asset})")
       .executeBatch(watchlist.assets.map { asset -> mapOf("accountId" to accountId, "asset" to asset.symbol) })
-      .map { watchlist.some() }
+      .map { watchlist }
       .onFailure { logger.error("Inserting watchlists for account ID '$accountId' failed.", it) }
 
   override fun deleteWatchlist(accountId: String): Future<Boolean> =
@@ -121,8 +120,8 @@ object MemGateway : Gateway {
   override fun getWatchlist(accountId: String): Future<Watchlist> =
     Future.succeededFuture(watchlists[accountId] ?: Watchlist(listOf()))
 
-  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Option<Watchlist>> =
-    Future.succeededFuture(watchlists.put(accountId, watchlist).toOption())
+  override fun postWatchlist(accountId: String, watchlist: Watchlist): Future<Watchlist> =
+    Future.succeededFuture(watchlists.put(accountId, watchlist)).map { watchlist }
 
   override fun deleteWatchlist(accountId: String): Future<Boolean> =
     Future.succeededFuture(watchlists.remove(accountId) != null)

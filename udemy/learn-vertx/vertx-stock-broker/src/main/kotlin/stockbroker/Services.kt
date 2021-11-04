@@ -1,10 +1,9 @@
 package stockbroker
 
 import arrow.core.Either
-import arrow.core.Option
 import io.vertx.core.Future
 import io.vertx.core.Vertx
-import java.util.*
+import java.util.UUID
 
 class Services(
   val assetService: AssetService,
@@ -46,7 +45,7 @@ class WatchlistService(private val gateway: Gateway) {
     gateway.getWatchlist(accountId.toString())
       .map { Either.Right(it) }
 
-  fun addWatchlist(accountId: UUID, watchlist: Watchlist): Future<Either<String, Option<Watchlist>>> =
+  fun addWatchlist(accountId: UUID, watchlist: Watchlist): Future<Either<String, Watchlist>> =
     gateway.postWatchlist(accountId.toString(), watchlist)
       .map { Either.Right(it) }
 
